@@ -2,32 +2,34 @@
 
 classDiagram
     class User {
-        +UUID id
-        +String username
-        +String email
+        -UUID userId
+        -String username
+        -String email
         -String passwordHash
-        +DateTime createdAt
+        +getUsername()
+        +getEmail()
+        +getId()
         +signUp()
         +signIn()
         +signOut()
     }
 
     class Player {
-        +Search[] searchHistory
-        +Card[] favorites
-        +Deck[] decks
-        +searchCards(query, filters)
-        +addFavorite(card)
-        +createDeck(name)
+        -Search[] searchHistory
+        -Card[] favorites
+        -Deck[] decks
+        -searchCards(query, filters)
+        -addFavorite(card)
+        -createDeck(name)
         +viewSuggestions()
     }
 
     class Admin {
-        +addCard(card)
-        +editCard(card)
-        +deleteCard(card)
-        +manageUser(user)
-        +editEmbedding(card)
+        -addCard(card)
+        -editCard(card)
+        -deleteCard(card)
+        -manageUser(user)
+        -editEmbedding(card)
     }
 
     User <|-- Player
@@ -35,49 +37,57 @@ classDiagram
 
 
     class Card {
-        +UUID uuid
-        +String name
-        +String manaCost
-        +String[] colors
-        +String typeLine
-        +String oracleText
-        +Decimal price
-        +String setCode
-        +String rarity
+        -UUID cardId
+        -UUID scryfallOracleId
+        -String name
+        -String manaCost
+        -Numeric convertedManaCost
+        -String[] colors
+        -String typeLine
+        -String effectText
+        -String cardType
+        -String cardSubtype
+        -String setCode
+        -String firstPrinting
+        -String power
+        -String toughness
+        -String textToEmbed
+        -Vector embedding
+        -_Text colorIdentity
         +getInfo()
         +updateInfo(data)
+        +embedText(data)
+        +vectorize(textToEmbed)
     }
 
     class Deck {
-        +UUID id
-        +String name
-        +Card[] cards
+        -UUID deckId
+        -String name
+        -Card[] cards
         +addCard(card, qty)
         +removeCard(card, qty)
         +export(format)
     }
 
     class Search {
-        +UUID id
-        +DateTime createdAt
-        +String query
-        +appliedFilters
-        +Card[] results
+        -UUID id
+        -String query
+        -appliedFilters
+        -Card[] results
         +execute()
         +saveToHistory()
     }
 
     class Suggestion {
-        +UUID id
-        +Card[] suggestedCards
+        -UUID id
+        -Card[] suggestedCards
         +generateSuggestions(history, currentCard)
     }
 
     class CardEmbedding {
-        +UUID cardId
-        +float[] vector
-        +String model
-        +DateTime updatedAt
+        -UUID cardId
+        -float[] vector
+        -String model
         +rebuild(card)
         +update(vector)
     }

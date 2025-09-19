@@ -1,20 +1,20 @@
 ```mermaid
-erDiagram
-    users {
-        int user_id PK
+classDiagram
+    class User {
+        <<PK>> int user_id
         string username
         string email
         string password
-        int role_id FK
+        <<FK>> int role_id
     }
 
-    roles {
-        int role_id PK
+    class Role {
+        <<PK>> int role_id
         string role_name
     }
 
-    cards {
-        int card_id PK
+    class Card {
+        <<PK>> int card_id
         string card_key
         string name
         string ascii_name
@@ -47,42 +47,42 @@ erDiagram
         json raw
     }
 
-    histories {
-        int history_id PK
-        int user_id FK
+    class History {
+        <<PK>> int history_id
+        <<FK>> int user_id
         string details
     }
 
-    decks {
-        int deck_id PK
-        int user_id FK
+    class Deck {
+        <<PK>> int deck_id
+        <<FK>> int user_id
         string type
         string name
     }
 
-    deck_cards {
-        int deck_id FK
-        int card_id FK
+    class DeckCard {
+        <<FK>> int deck_id
+        <<FK>> int card_id
         int quantity
     }
 
-    favorites {
-        int user_id FK
-        int card_id FK
+    class Favorite {
+        <<FK>> int user_id
+        <<FK>> int card_id
     }
 
-    user_deck_link {
-        int user_id FK
-        int deck_id FK
+    class UserDeckLink {
+        <<FK>> int user_id
+        <<FK>> int deck_id
     }
 
-    %% Relations
-    roles ||--o{ users : "has"
-    users ||--o{ decks : "owns"
-    decks ||--o{ deck_cards : "contains"
-    cards ||--o{ deck_cards : "in"
-    users ||--o{ user_deck_link : "links"
-    decks ||--o{ user_deck_link : "linked to"
-    users ||--o{ favorites : "favorites"
-    cards ||--o{ favorites : "favored in"
-    users ||--o{ histories : "performs"
+    %% UML-style associations
+    Role "1" --> "0..*" User : has
+    User "1" --> "0..*" Deck : owns
+    Deck "1" --> "0..*" DeckCard : contains
+    Card "1" --> "0..*" DeckCard : in
+    User "1" --> "0..*" UserDeckLink : collaborates
+    Deck "1" --> "0..*" UserDeckLink : shared_with
+    User "1" --> "0..*" Favorite : has_favorite
+    Card "1" --> "0..*" Favorite : is_favorited_in
+    User "1" --> "0..*" History : has

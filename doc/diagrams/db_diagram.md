@@ -1,18 +1,20 @@
 ```mermaid
 erDiagram
     users {
-        int user_id
+        int user_id PK
         string username
         string email
         string password
-        int role_id
+        int role_id FK
     }
+
     roles {
-        int role_id
+        int role_id PK
         string role_name
     }
+
     cards {
-        int id
+        int card_id PK
         string card_key
         string name
         string ascii_name
@@ -39,43 +41,48 @@ erDiagram
         boolean is_game_changer
         boolean is_reserved
         boolean has_alternative_deck_limit
-        set colors
-        set color_identity
-        set color_indicator
-        set types
-        set subtypes
-        set supertypes
-        set keywords
-        set subsets
-        set printings
         uuid scryfall_oracle_id
         string text_to_embed
         vector embedding
         json raw
     }
+
     histories {
-        int user_id
-        list history
+        int history_id PK
+        int user_id FK
+        string details
     }
-    user_deck_link {
-        id
-        user_id
-        deck_id
-        bool active
-    }
+
     decks {
-        int deck_id
-        int user_id
-        list cards
+        int deck_id PK
+        int user_id FK
         string type
         string name
     }
-    favorites {
-        int user_id
-        list cards
+
+    deck_cards {
+        int deck_id FK
+        int card_id FK
+        int quantity
     }
 
-    classDef default fill:#f9f,stroke-width:4px
-    classDef foo stroke:#f00
-    classDef bar stroke:#0f0
-    classDef foobar stroke:#00f
+    favorites {
+        int user_id FK
+        int card_id FK
+    }
+
+    user_deck_link {
+        int user_id FK
+        int deck_id FK
+    }
+
+    %% Relations
+    roles ||--o{ users : "has"
+    users ||--o{ decks : "owns"
+    decks ||--o{ deck_cards : "contains"
+    cards ||--o{ deck_cards : "in"
+    users ||--o{ user_deck_link : "links"
+    decks ||--o{ user_deck_link : "linked to"
+    users ||--o{ favorites : "favorites"
+    cards ||--o{ favorites : "favored in"
+    users ||--o{ histories : "performs"

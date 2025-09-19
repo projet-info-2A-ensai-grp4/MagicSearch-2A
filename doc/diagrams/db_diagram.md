@@ -1,88 +1,96 @@
 ```mermaid
-classDiagram
-    class User {
-        <<PK>> int user_id
-        string username
-        string email
-        string password
-        <<FK>> int role_id
-    }
-
-    class Role {
-        <<PK>> int role_id
-        string role_name
-    }
-
-    class Card {
-        <<PK>> int card_id
-        string card_key
-        string name
-        string ascii_name
-        string text
-        string type
-        string layout
-        string mana_cost
-        numeric mana_value
-        numeric converted_mana_cost
-        numeric face_converted_mana_cost
-        numeric face_mana_value
-        string face_name
-        string first_printing
-        string hand
-        string life
-        string loyalty
-        string power
-        string toughness
-        string side
-        string defense
-        numeric edhrec_rank
-        numeric edhrec_saltiness
+erDiagram
+    cards {
+        int id PK
+        varchar card_key
+        varchar name
+        varchar ascii_name
+        text text
+        varchar type
+        varchar layout
+        varchar mana_cost
+        int mana_value
+        int converted_mana_cost
+        int face_converted_mana_cost
+        int face_mana_value
+        varchar face_name
+        date first_printing
+        varchar hand
+        varchar life
+        varchar loyalty
+        varchar power
+        varchar toughness
+        varchar side
+        varchar defense
+        int edhrec_rank
+        float edhrec_saltiness
         boolean is_funny
         boolean is_game_changer
         boolean is_reserved
         boolean has_alternative_deck_limit
+        varchar colors
+        varchar color_identity
+        varchar color_indicator
+        varchar types
+        varchar subtypes
+        varchar supertypes
+        varchar keywords
+        varchar subsets
+        varchar printings
         uuid scryfall_oracle_id
-        string text_to_embed
+        text text_to_embed
         vector embedding
         json raw
     }
 
-    class History {
-        <<PK>> int history_id
-        <<FK>> int user_id
-        string details
+    users {
+        int user_id PK
+        varchar username
+        varchar email
+        varchar password
+        int role_id FK
     }
 
-    class Deck {
-        <<PK>> int deck_id
-        <<FK>> int user_id
-        string type
-        string name
+    roles {
+        int role_id PK
+        varchar role_name
     }
 
-    class DeckCard {
-        <<FK>> int deck_id
-        <<FK>> int card_id
+    decks {
+        int deck_id PK
+        int user_id FK
+        varchar type
+        varchar name
+    }
+
+    deck_cards {
+        int deck_id FK
+        int card_id FK
         int quantity
     }
 
-    class Favorite {
-        <<FK>> int user_id
-        <<FK>> int card_id
+    user_deck_link {
+        int user_id FK
+        int deck_id FK
     }
 
-    class UserDeckLink {
-        <<FK>> int user_id
-        <<FK>> int deck_id
+    histories {
+        int history_id PK
+        int user_id FK
+        text prompt
     }
 
-    %% UML-style associations with multiplicities
-    Role "1" --> "0..*" User : has
-    User "1" --> "0..*" Deck : owns
-    Deck "1" --> "0..*" DeckCard : contains
-    Card "1" --> "0..*" DeckCard : in
-    User "1" --> "0..*" UserDeckLink : collaborates
-    Deck "1" --> "0..*" UserDeckLink : shared_with
-    User "1" --> "0..*" Favorite : has_favorite
-    Card "1" --> "0..*" Favorite : is_favorited_in
-    User "1" --> "0..*" History : has
+    favorites {
+        int user_id FK
+        int card_id FK
+    }
+
+    roles ||--o{ users : "has"
+    users ||--o{ decks : "owns"
+    decks ||--o{ deck_cards : "contains"
+    cards ||--o{ deck_cards : "in"
+    users ||--o{ user_deck_link : "links"
+    decks ||--o{ user_deck_link : "linked to"
+    users ||--o{ favorites : "favorites"
+    cards ||--o{ favorites : "favored in"
+    users ||--o{ histories : "has"

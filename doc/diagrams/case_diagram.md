@@ -6,11 +6,12 @@
 OR :
 
 @startuml
+
 ' paste here to visualize : https://www.plantuml.com/plantuml/uml/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000
 ' doc : https://plantuml.com/fr/use-case-diagram
 
 
-left to right direction
+top to bottom direction
 
 actor "User"    as user
 actor "Admin"   as admin
@@ -57,4 +58,5 @@ admin --> login
 admin --> logout
 user --> login
 user --> logout
+
 @enduml

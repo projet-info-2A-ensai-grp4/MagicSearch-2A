@@ -76,7 +76,7 @@ classDiagram
         <<FK>> int deck_id
     }
 
-    %% UML-style associations
+    %% UML-style associations with multiplicities
     Role "1" --> "0..*" User : has
     User "1" --> "0..*" Deck : owns
     Deck "1" --> "0..*" DeckCard : contains

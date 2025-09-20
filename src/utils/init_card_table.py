@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS cards (
 """)
 
 # --- Load JSON file ---
-with open("MagicSearch-2A/data/AtomicCards.json", "r") as file:
+with open("/home/onyxia/work/MagicSearch-2A/data/AtomicCards.json", "r") as file:
     data = json.load(file)
 
 cards = data["data"]

@@ -1,5 +1,4 @@
 ```mermaid
-
 classDiagram
     class User {
         -UUID userId
@@ -11,7 +10,6 @@ classDiagram
         +getId()
         +signUp()
         +signIn()
-        +signOut()
     }
 
     class Player {
@@ -36,7 +34,7 @@ classDiagram
     User <|-- Admin
 
 
-    class Card {
+    class CardBusiness {
         -UUID cardId
         -UUID scryfallOracleId
         -String name
@@ -55,11 +53,15 @@ classDiagram
         -Vector embedding
         -_Text colorIdentity
         +getInfo()
-        +updateInfo(data)
-        +embedText(data)
+        +generateEmbedText(data)
         +vectorize(textToEmbed)
     }
 
+    class CardDao {
+        - UUID cardId
+        +get_card_by_id(cardId)
+        +edit_text_to_embed(cardId,embed_me)
+    }
     class Deck {
         -UUID deckId
         -String name
@@ -84,22 +86,12 @@ classDiagram
         +generateSuggestions(history, currentCard)
     }
 
-    class CardEmbedding {
-        -UUID cardId
-        -float[] vector
-        -String model
-        +rebuild(card)
-        +update(vector)
-    }
-
-
     Player "1" o-- "*" Search : history
     Player "1" o-- "*" Deck : owns
-    Player "*" -- "*" Card : favorites
-    Deck "*" -- "*" Card : cards
-    Search "*" --> "*" Card : results
+    Player "*" -- "*" CardBusiness : favorites
+    Deck "*" -- "*" CardBusiness : cards
+    Search "*" --> "*" CardBusiness : results
     Player "1" o-- "*" Suggestion
-    Suggestion "*" --> "*" Card : suggested
-    Card "0..1" -- "1" CardEmbedding : embedding
-
+    Suggestion "*" --> "*" CardBusiness : suggested
+    CardBusiness "1" <--> "1" CardDao: card information
 ```

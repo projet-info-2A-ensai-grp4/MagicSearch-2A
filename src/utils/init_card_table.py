@@ -8,7 +8,7 @@ conn = psycopg2.connect(
     port=5432,
     database="defaultdb",
     user="user-victorjean",
-    password="pr9yh1516s57jjnmw7ll"
+    password="pr9yh1516s57jjnmw7ll",
 )
 cur = conn.cursor()
 
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS cards (
 """)
 
 # --- Load JSON file ---
-with open("MagicSearch-2A/data/AtomicCards.json", "r") as file:
+with open("/home/onyxia/work/MagicSearch-2A/data/AtomicCards.json", "r") as file:
     data = json.load(file)
 
 cards = data["data"]
@@ -70,45 +70,47 @@ for card_key, card_list in cards.items():
         continue
     card = card_list[0]
 
-    rows.append((
-        card_key,
-        card.get("name"),
-        card.get("asciiName"),
-        card.get("text"),
-        card.get("type"),
-        card.get("layout"),
-        card.get("manaCost"),
-        card.get("manaValue"),
-        card.get("convertedManaCost"),
-        card.get("faceConvertedManaCost"),
-        card.get("faceManaValue"),
-        card.get("faceName"),
-        card.get("firstPrinting"),
-        card.get("hand"),
-        card.get("life"),
-        card.get("loyalty"),
-        card.get("power"),
-        card.get("toughness"),
-        card.get("side"),
-        card.get("defense"),
-        card.get("edhrecRank"),
-        card.get("edhrecSaltiness"),
-        card.get("isFunny"),
-        card.get("isGameChanger"),
-        card.get("isReserved"),
-        card.get("hasAlternativeDeckLimit"),
-        card.get("colors"),
-        card.get("colorIdentity"),
-        card.get("colorIndicator"),
-        card.get("types"),
-        card.get("subtypes"),
-        card.get("supertypes"),
-        card.get("keywords"),
-        card.get("subsets"),
-        card.get("printings"),
-        card.get("identifiers", {}).get("scryfallOracleId"),
-        json.dumps(card)
-    ))
+    rows.append(
+        (
+            card_key,
+            card.get("name"),
+            card.get("asciiName"),
+            card.get("text"),
+            card.get("type"),
+            card.get("layout"),
+            card.get("manaCost"),
+            card.get("manaValue"),
+            card.get("convertedManaCost"),
+            card.get("faceConvertedManaCost"),
+            card.get("faceManaValue"),
+            card.get("faceName"),
+            card.get("firstPrinting"),
+            card.get("hand"),
+            card.get("life"),
+            card.get("loyalty"),
+            card.get("power"),
+            card.get("toughness"),
+            card.get("side"),
+            card.get("defense"),
+            card.get("edhrecRank"),
+            card.get("edhrecSaltiness"),
+            card.get("isFunny"),
+            card.get("isGameChanger"),
+            card.get("isReserved"),
+            card.get("hasAlternativeDeckLimit"),
+            card.get("colors"),
+            card.get("colorIdentity"),
+            card.get("colorIndicator"),
+            card.get("types"),
+            card.get("subtypes"),
+            card.get("supertypes"),
+            card.get("keywords"),
+            card.get("subsets"),
+            card.get("printings"),
+            card.get("identifiers", {}).get("scryfallOracleId"),
+            json.dumps(card),
+        )
+    )
 
 # --- Bulk insert/update ---
 execute_values(
@@ -162,7 +164,7 @@ execute_values(
         scryfall_oracle_id = EXCLUDED.scryfall_oracle_id,
         raw = EXCLUDED.raw
     """,
-    rows
+    rows,
 )
 
 conn.commit()

@@ -1,2 +1,5 @@
 psycopg
-request
+requests
+pytest
+python-dotenv
+requests-mock

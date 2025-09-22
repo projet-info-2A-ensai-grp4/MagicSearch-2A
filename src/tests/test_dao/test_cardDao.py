@@ -1,6 +1,8 @@
 import pytest
 from dao.cardDao import CardDao
 
+pytestmark = pytest.mark.filterwarnings("ignore::UserWarning") # Used to warn user that None was returned (in case the card is non existent)
+
 
 @pytest.fixture
 def card_dao():

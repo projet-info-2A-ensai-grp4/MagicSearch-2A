@@ -1,4 +1,5 @@
 import psycopg2
+import warnings
 from psycopg2 import sql
 
 
@@ -53,7 +54,9 @@ class CardDao:
 
             if row:
                 return dict(zip(columns, row))
-            return None
+            else:
+                warnings.warn(f"No card found with ID {card_id}. Returning None.", UserWarning)
+                return None
 
         except psycopg2.Error as e:
             # Log the error or handle it as needed

@@ -210,9 +210,7 @@ def test_card_business_repr(mock_card_dao):
     with CardDao() as dao:
         business = CardBusiness(dao, 420)
 
-    assert "id=420, card_key=Adarkar Wastes, name=Adarkar Wastes" in repr(
-        business
-    )
+    assert "id=420, card_key=Adarkar Wastes, name=Adarkar Wastes" in repr(business)
     assert "text={T}: Add {C}." in repr(business)
     assert "color_identity=['U', 'W']" in repr(business)
 

@@ -20,7 +20,23 @@ class CardBusiness:
 
     def generate_text_to_embed(self):
         """Generate and update the text_to_embed attribute of a card."""
-        pass  # TODO: Generate a prompt and update the text_to_embed
+        if not self.id:
+            raise ValueError("Impossible to generate text_to_embed without a card ID.")
+            
+    fields = [
+        self.name, 
+        self.type,
+        self.text,
+        ", ".join(self.colors) if self.colors else None 
+    ]
+    text_to_embed = " | ".join(filter(None, fields))
+
+    with self.dao: 
+        self.dao.edit_text_to_embed(text_to_embed, self.id)
+
+    self.text_to_embed = text_to_embed
+    return text_to_embed
+    
 
     def vectorize(self, text: str, endpoint_url: str, api_key: str = None) -> list:
         """

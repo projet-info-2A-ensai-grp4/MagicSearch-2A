@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import MagicMock, patch
 from dao.cardDao import CardDao
 from business_object.cardBusiness import CardBusiness  # Replace `your_module` with the actual module name
-import requests
 import os
 from dotenv import load_dotenv
 

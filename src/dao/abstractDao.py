@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import psycopg2
 
 
-class abstractDao(ABC):
+class AbstractDao(ABC):
     def __init__(self):
         self.conn_params = {
             "host": "postgresql-885217.user-victorjean",
@@ -32,13 +32,13 @@ class abstractDao(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, id):
+    def get_by_id(self, entity_id):
         pass
 
     @abstractmethod
-    def update(self, id, *args, **kwargs):
+    def update(self, entity_id, *args, **kwargs):
         pass
 
     @abstractmethod
-    def delete(self, id):
+    def delete(self, entity_id):
         pass

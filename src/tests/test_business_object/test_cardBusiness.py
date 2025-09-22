@@ -1,11 +1,15 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from dao.cardDao import CardDao
-from business_object.cardBusiness import CardBusiness  # Replace `your_module` with the actual module name
+from business_object.cardBusiness import (
+    CardBusiness,
+)  # Replace `your_module` with the actual module name
 import os
 from dotenv import load_dotenv
 
-pytestmark = pytest.mark.filterwarnings("ignore::UserWarning") # Used to warn user that None was returned (in case the card is non existent)
+pytestmark = pytest.mark.filterwarnings(
+    "ignore::UserWarning"
+)  # Used to warn user that None was returned (in case the card is non existent)
 
 # Mock data for testing
 MOCK_CARD_DATA = {
@@ -44,7 +48,27 @@ MOCK_CARD_DATA = {
     "supertypes": [],
     "keywords": None,
     "subsets": None,
-    "printings": ["10E", "5ED", "6ED", "7ED", "9ED", "BLC", "DMU", "DRC", "DSC", "EOC", "ICE", "M3C", "OLEP", "PDMU", "PLST", "PRM", "PTC", "TDC", "WC00"],
+    "printings": [
+        "10E",
+        "5ED",
+        "6ED",
+        "7ED",
+        "9ED",
+        "BLC",
+        "DMU",
+        "DRC",
+        "DSC",
+        "EOC",
+        "ICE",
+        "M3C",
+        "OLEP",
+        "PDMU",
+        "PLST",
+        "PRM",
+        "PTC",
+        "TDC",
+        "WC00",
+    ],
     "scryfall_oracle_id": "d5ad26cc-2bdb-46b7-b8bf-dd099d5fa09b",
     "text_to_embed": "This is a sample text to embed",
     "embedding": None,
@@ -57,7 +81,27 @@ MOCK_CARD_DATA = {
         "layout": "normal",
         "subtypes": [],
         "manaValue": 0.0,
-        "printings": ["10E", "5ED", "6ED", "7ED", "9ED", "BLC", "DMU", "DRC", "DSC", "EOC", "ICE", "M3C", "OLEP", "PDMU", "PLST", "PRM", "PTC", "TDC", "WC00"],
+        "printings": [
+            "10E",
+            "5ED",
+            "6ED",
+            "7ED",
+            "9ED",
+            "BLC",
+            "DMU",
+            "DRC",
+            "DSC",
+            "EOC",
+            "ICE",
+            "M3C",
+            "OLEP",
+            "PDMU",
+            "PLST",
+            "PRM",
+            "PTC",
+            "TDC",
+            "WC00",
+        ],
         "edhrecRank": 182,
         "legalities": {
             "duel": "Legal",
@@ -118,6 +162,7 @@ MOCK_CARD_DATA = {
     },
 }
 
+
 # Fixture to mock CardDao
 @pytest.fixture
 def mock_card_dao():
@@ -126,11 +171,13 @@ def mock_card_dao():
         mock_dao_class.return_value.__enter__.return_value = mock_dao
         yield mock_dao
 
+
 # Fixture to load environment variables for testing
 @pytest.fixture(autouse=True)
 def load_env():
     # Load environment variables from .env.test if it exists
     load_dotenv(".env.test")
+
 
 # Test initialization of CardBusiness
 def test_card_business_init_success(mock_card_dao):
@@ -145,6 +192,7 @@ def test_card_business_init_success(mock_card_dao):
     assert business.text_to_embed == "This is a sample text to embed"
     # mock_card_dao.get_card_by_id.assert_called_once_with(420)
 
+
 def test_card_business_init_card_not_found(mock_card_dao):
     """Test initializing CardBusiness with a non-existent card_id."""
     mock_card_dao.get_card_by_id.return_value = None
@@ -152,6 +200,7 @@ def test_card_business_init_card_not_found(mock_card_dao):
     with CardDao() as dao:
         with pytest.raises(ValueError, match="Card with ID 99999 does not exist."):
             CardBusiness(dao, 99999)
+
 
 # Test the __repr__ method
 def test_card_business_repr(mock_card_dao):
@@ -161,9 +210,12 @@ def test_card_business_repr(mock_card_dao):
     with CardDao() as dao:
         business = CardBusiness(dao, 420)
 
-    assert "CardBusiness(id=420, card_key=Adarkar Wastes, name=Adarkar Wastes" in repr(business)
+    assert "id=420, card_key=Adarkar Wastes, name=Adarkar Wastes" in repr(
+        business
+    )
     assert "text={T}: Add {C}." in repr(business)
     assert "color_identity=['U', 'W']" in repr(business)
+
 
 # Test the vectorize method
 def test_vectorize_success(mock_card_dao, requests_mock):
@@ -171,7 +223,7 @@ def test_vectorize_success(mock_card_dao, requests_mock):
     mock_card_dao.get_card_by_id.return_value = MOCK_CARD_DATA
 
     # Mock the Ollama API response
-    mock_embedding = [0.1, 0.2, 0.3]
+    mock_embedding = [[0.1, 0.2, 0.3]]
     requests_mock.post(
         "https://llm.lab.sspcloud.fr/ollama/api/embed",
         json={"embeddings": mock_embedding},
@@ -183,10 +235,11 @@ def test_vectorize_success(mock_card_dao, requests_mock):
         embedding = business.vectorize(
             business.text_to_embed,
             "https://llm.lab.sspcloud.fr/ollama/api/embed",
-            api_key="test_api_key"
+            api_key="test_api_key",
         )
 
-    assert embedding == mock_embedding
+    assert embedding == mock_embedding[0]
+
 
 def test_vectorize_invalid_response(mock_card_dao, requests_mock):
     """Test vectorization with an invalid API response."""
@@ -201,12 +254,15 @@ def test_vectorize_invalid_response(mock_card_dao, requests_mock):
 
     with CardDao() as dao:
         business = CardBusiness(dao, 420)
-        with pytest.raises(ValueError, match="Invalid response format: 'embedding' field not found."):
+        with pytest.raises(
+            ValueError, match="Invalid response format: 'embedding' field not found."
+        ):
             business.vectorize(
                 business.text_to_embed,
                 "https://llm.lab.sspcloud.fr/ollama/api/embed",
-                api_key="test_api_key"
+                api_key="test_api_key",
             )
+
 
 def test_vectorize_api_error(mock_card_dao, requests_mock):
     """Test vectorization with an API error."""
@@ -225,15 +281,16 @@ def test_vectorize_api_error(mock_card_dao, requests_mock):
             business.vectorize(
                 business.text_to_embed,
                 "https://llm.lab.sspcloud.fr/ollama/api/embed",
-                api_key="test_api_key"
+                api_key="test_api_key",
             )
+
 
 def test_vectorize_without_api_key(mock_card_dao, requests_mock):
     """Test vectorization without an API key."""
     mock_card_dao.get_card_by_id.return_value = MOCK_CARD_DATA
 
     # Mock the Ollama API response
-    mock_embedding = [0.1, 0.2, 0.3]
+    mock_embedding = [[0.1, 0.2, 0.3]]
     requests_mock.post(
         "https://llm.lab.sspcloud.fr/ollama/api/embed",
         json={"embeddings": mock_embedding},
@@ -243,11 +300,11 @@ def test_vectorize_without_api_key(mock_card_dao, requests_mock):
     with CardDao() as dao:
         business = CardBusiness(dao, 420)
         embedding = business.vectorize(
-            business.text_to_embed,
-            "https://llm.lab.sspcloud.fr/ollama/api/embed"
+            business.text_to_embed, "https://llm.lab.sspcloud.fr/ollama/api/embed"
         )
 
-    assert embedding == mock_embedding
+    assert embedding == mock_embedding[0]
+
 
 # Test the main block
 @patch("builtins.print")
@@ -258,7 +315,7 @@ def test_main_block_success(mock_load_dotenv, mock_print, mock_card_dao, request
     mock_card_dao.get_card_by_id.return_value = MOCK_CARD_DATA
 
     # Mock the Ollama API response
-    mock_embedding = [0.1, 0.2, 0.3]
+    mock_embedding = [[0.1, 0.2, 0.3]]
     requests_mock.post(
         "https://llm.lab.sspcloud.fr/ollama/api/embed",
         json={"embeddings": mock_embedding},
@@ -271,10 +328,11 @@ def test_main_block_success(mock_load_dotenv, mock_print, mock_card_dao, request
         embedding = business.vectorize(
             business.text_to_embed,
             "https://llm.lab.sspcloud.fr/ollama/api/embed",
-            os.getenv("LLM_API_KEY")
+            os.getenv("LLM_API_KEY"),
         )
 
-    assert embedding == mock_embedding
+    assert embedding == mock_embedding[0]
+
 
 @patch("builtins.print")
 @patch("business_object.cardBusiness.load_dotenv")
@@ -297,6 +355,5 @@ def test_main_block_error(mock_load_dotenv, mock_print, mock_card_dao, requests_
             business.vectorize(
                 business.text_to_embed,
                 "https://llm.lab.sspcloud.fr/ollama/api/embed",
-                os.getenv("LLM_API_KEY")
+                os.getenv("LLM_API_KEY"),
             )
-

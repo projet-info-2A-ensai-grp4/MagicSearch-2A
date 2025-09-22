@@ -1,7 +1,9 @@
 import pytest
 from dao.cardDao import CardDao
 
-pytestmark = pytest.mark.filterwarnings("ignore::UserWarning") # Used to warn user that None was returned (in case the card is non existent)
+pytestmark = pytest.mark.filterwarnings(
+    "ignore::UserWarning"
+)  # Used to warn user that None was returned (in case the card is non existent)
 
 
 @pytest.fixture
@@ -21,6 +23,9 @@ def test_get_card_by_id(card_dao):
     assert isinstance(result, dict), "Result should be a dictionary"
     assert result["id"] == test_card_id, "Card ID does not match"
     assert "text_to_embed" in result, "text_to_embed field is missing"
+    assert (
+        result["embedding"] is None or type(result["embedding"]) is list
+    )  # the embedding is represented as a list in Python
 
 
 def test_get_card_by_id_nonexistent(card_dao):
@@ -58,6 +63,33 @@ def test_edit_text_to_embed_nonexistent(card_dao):
         card_dao.edit_text_to_embed(test_text, nonexistent_card_id)
 
 
+def test_edit_vector_nonexistent(card_dao):
+    """Test editing the embedding value for a non-existent card ID."""
+    test_vector = [0.1, 0.2, 0.3]
+    nonexistent_card_id = 99999
+
+    with pytest.raises(
+        ValueError, match=f"No card found with ID {nonexistent_card_id}"
+    ):
+        card_dao.edit_vector(test_vector, nonexistent_card_id)
+
+
+def test_edit_vector(card_dao):
+    """Test editing the embeddint value for a card ID."""
+    test_vector = [0.1, 0.2, 0.3]
+    test_card_id = 420
+
+    result = card_dao.edit_vector(test_vector, test_card_id)
+    assert result == 1
+
+    # Verify the update
+    updated_card = card_dao.get_card_by_id(test_card_id)
+    assert updated_card is not None, "Card not found after update"
+    assert updated_card["embedding"] == test_vector, (
+        "embedding value was not updated correctly"
+    )
+
+
 def test_get_card_by_id_invalid_input(card_dao):
     """Test fetching a card by an invalid ID."""
     invalid_card_id = -1
@@ -71,3 +103,11 @@ def test_edit_text_to_embed_invalid_input(card_dao):
     invalid_card_id = -1
     with pytest.raises(ValueError, match="card_id must be a positive integer"):
         card_dao.edit_text_to_embed(test_text, invalid_card_id)
+
+
+def test_edit_vector_invalid_input(card_dao):
+    """Test editing the vector value with an invalid card ID."""
+    test_vector = [0.1, 0.2, 0.3]
+    invalid_card_id = -1
+    with pytest.raises(ValueError, match="card_id must be a positive integer"):
+        card_dao.edit_vector(test_vector, invalid_card_id)

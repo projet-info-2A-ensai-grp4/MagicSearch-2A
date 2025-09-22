@@ -6,6 +6,7 @@ import os
 
 class CardBusiness:
     def __init__(self, dao: CardDao, card_id: int):
+        self.dao = dao
         with dao:
             card_data = dao.get_card_by_id(card_id)
             if card_data is None:
@@ -44,7 +45,7 @@ class CardBusiness:
         # Adapt the payload to match the curl request format
         payload = {
             "model": "bge-m3:latest",
-            "input": [text]  # The input is expected as a list of strings
+            "input": [text],  # The input is expected as a list of strings
         }
 
         try:
@@ -56,13 +57,18 @@ class CardBusiness:
 
             # Check if the response contains the embeddings
             if "embeddings" in result:
-                #TODO: modify the database to edit the vector (need a edit_vector method in DAO)
-                return result["embeddings"]
+                self.embedding = result["embeddings"][0]
+                with self.dao:
+                    self.dao.edit_vector(self.embedding, self.id)
+                return self.embedding
             else:
-                raise ValueError("Invalid response format: 'embedding' field not found.")
+                raise ValueError(
+                    "Invalid response format: 'embedding' field not found."
+                )
 
         except requests.exceptions.RequestException as e:
             raise ValueError(f"Failed to vectorize text: {e}")
+
 
 if __name__ == "__main__":
     with CardDao() as dao:
@@ -79,8 +85,10 @@ if __name__ == "__main__":
             load_dotenv()
             api_key = os.getenv("LLM_API_KEY")
 
-            embedding = business.vectorize(business.text_to_embed, endpoint_url, api_key)
+            embedding = business.vectorize(
+                business.text_to_embed, endpoint_url, api_key
+            )
             print(f"Vectorized embedding: {embedding}")
-
+            print(type(embedding))
         except ValueError as e:
             print(f"Error: {e}")

@@ -1,4 +1,3 @@
-```mermaid
 sequenceDiagram
     participant U as User
     participant C as Controller Layer
@@ -7,28 +6,27 @@ sequenceDiagram
     participant D as DAO
     participant P as Persistent Layer (DB)
 
-    U->>C: Appelle endpoint avec recherche en langage naturel
-    C->>S: Transmet la requête de recherche
+    U->>C: Calls endpoint with natural language search
+    C->>S: Forwards search request
 
-    %% Vectorisation via API externe
-    S->>API: Envoie texte pour vectorisation
-    API-->>S: Retourne vecteurs embed
+    %% Vectorization via external API
+    S->>API: Sends text for vectorization
+    API-->>S: Returns embedded vectors
 
-    %% Persistance des vecteurs
-    S->>D: Demande d'importer vecteurs avec ID
-    D->>P: INSERT vecteurs en base
+    %% Persistence of vectors
+    S->>D: Requests to import vectors with ID
+    D->>P: INSERT vectors into database
     P-->>D: Ack insert
     D-->>S: Confirmation
 
-    %% Calcul du cosine similarity
-    S->>S: Calcule similarité cosinus
-    S->>S: Identifie l'ID du meilleur vecteur
+    %% Cosine similarity computation
+    S->>S: Computes cosine similarity
+    S->>S: Identifies ID of best vector
 
-    %% Récupération de la carte finale
-    S->>D: Demande carte par ID
-    D->>P: SELECT carte WHERE id = bestId
-    P-->>D: Retourne carte
-    D-->>S: Carte complète
-    S-->>C: Carte complète
-    C-->>U: Réponse finale (carte)
-
+    %% Retrieval of the final map
+    S->>D: Requests map by ID
+    D->>P: SELECT map WHERE id = bestId
+    P-->>D: Returns map
+    D-->>S: Complete map
+    S-->>C: Complete map
+    C-->>U: Final response (map)

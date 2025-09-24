@@ -1,6 +1,6 @@
 ```mermaid
 classDiagram
-    class User {
+    class UserDAO {
         -UUID userId
         -String username
         -String email
@@ -12,7 +12,7 @@ classDiagram
         +signIn()
     }
 
-    class Player {
+    class PlayerDAO {
         -Search[] searchHistory
         -Card[] favorites
         -Deck[] decks
@@ -22,7 +22,7 @@ classDiagram
         +viewSuggestions()
     }
 
-    class Admin {
+    class AdminDAO {
         -addCard(card)
         -editCard(card)
         -deleteCard(card)
@@ -30,8 +30,8 @@ classDiagram
         -editEmbedding(card)
     }
 
-    User <|-- Player
-    User <|-- Admin
+    UserDAO <|-- PlayerDAO
+    UserDAO <|-- AdminDAO
 
 
     class CardBusiness {
@@ -53,6 +53,7 @@ classDiagram
         -Vector embedding
         -_Text colorIdentity
         +getInfo()
+        +detailSpecifity(effectText)
         +generateEmbedText(data)
         +vectorize(textToEmbed)
     }
@@ -61,6 +62,7 @@ classDiagram
         - UUID cardId
         +get_card_by_id(cardId)
         +edit_text_to_embed(cardId,embed_me)
+        +edit_embedding(cardId,text_to_embed)
     }
     class Deck {
         -UUID deckId
@@ -86,12 +88,12 @@ classDiagram
         +generateSuggestions(history, currentCard)
     }
 
-    Player "1" o-- "*" Search : history
-    Player "1" o-- "*" Deck : owns
-    Player "*" -- "*" CardBusiness : favorites
+    PlayerDAO "1" o-- "*" Search : history
+    PlayerDAO "1" o-- "*" Deck : owns
+    PlayerDAO "*" -- "*" CardBusiness : favorites
     Deck "*" -- "*" CardBusiness : cards
     Search "*" --> "*" CardBusiness : results
-    Player "1" o-- "*" Suggestion
+    PlayerDAO "1" o-- "*" Suggestion
     Suggestion "*" --> "*" CardBusiness : suggested
     CardBusiness "1" <--> "1" CardDao: card information
 ```

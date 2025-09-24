@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
     participant U as User
     participant C as Controller Layer

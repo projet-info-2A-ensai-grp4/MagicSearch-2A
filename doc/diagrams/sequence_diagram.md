@@ -3,7 +3,7 @@ sequenceDiagram
     participant U as User
     participant C as Controller Layer
     participant S as Service Layer
-    participant API as External Embedding API
+    participant API as OpenWebUI Embedding API (SSPCloud)
     participant D as DAO
     participant P as Persistent Layer (DB)
 
@@ -31,3 +31,4 @@ sequenceDiagram
     D-->>S: Complete map
     S-->>C: Complete map
     C-->>U: Final response (map)
+

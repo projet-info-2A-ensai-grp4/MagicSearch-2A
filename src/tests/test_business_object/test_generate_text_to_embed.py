@@ -24,9 +24,7 @@ def test_generate_text_to_embed_without_colors(MockDao):
         result = b.generate_text_to_embed()
 
     assert result == "Adarkar Wastes | Land | {T}: Add {C}."
-    # DAO doit être appelé avec (texte, id)
     mock.edit_text_to_embed.assert_called_once_with(result, 420)
-    # attribut mis à jour
     assert b.text_to_embed == result
 
 

@@ -198,7 +198,9 @@ def test_card_business_init_card_not_found(mock_card_dao):
     mock_card_dao.get_card_by_id.return_value = None
 
     with CardDao() as dao:
-        with pytest.raises(ValueError, match="Card with ID 99999 does not exist."):
+        with pytest.raises(
+            ValueError, match="Card with ID 99999 does not exist."
+        ):
             CardBusiness(dao, 99999)
 
 
@@ -210,7 +212,9 @@ def test_card_business_repr(mock_card_dao):
     with CardDao() as dao:
         business = CardBusiness(dao, 420)
 
-    assert "id=420, card_key=Adarkar Wastes, name=Adarkar Wastes" in repr(business)
+    assert "id=420, card_key=Adarkar Wastes, name=Adarkar Wastes" in repr(
+        business
+    )
     assert "text={T}: Add {C}." in repr(business)
     assert "color_identity=['U', 'W']" in repr(business)
 
@@ -253,7 +257,8 @@ def test_vectorize_invalid_response(mock_card_dao, requests_mock):
     with CardDao() as dao:
         business = CardBusiness(dao, 420)
         with pytest.raises(
-            ValueError, match="Invalid response format: 'embedding' field not found."
+            ValueError,
+            match="Invalid response format: 'embedding' field not found.",
         ):
             business.vectorize(
                 business.text_to_embed,
@@ -298,7 +303,8 @@ def test_vectorize_without_api_key(mock_card_dao, requests_mock):
     with CardDao() as dao:
         business = CardBusiness(dao, 420)
         embedding = business.vectorize(
-            business.text_to_embed, "https://llm.lab.sspcloud.fr/ollama/api/embed"
+            business.text_to_embed,
+            "https://llm.lab.sspcloud.fr/ollama/api/embed",
         )
 
     assert embedding == mock_embedding[0]
@@ -308,7 +314,9 @@ def test_vectorize_without_api_key(mock_card_dao, requests_mock):
 @patch("builtins.print")
 @patch("business_object.cardBusiness.load_dotenv")  # nameofthefile.load_dotenv
 @patch.dict(os.environ, {"LLM_API_KEY": "test_api_key"})
-def test_main_block_success(mock_load_dotenv, mock_print, mock_card_dao, requests_mock):
+def test_main_block_success(
+    mock_load_dotenv, mock_print, mock_card_dao, requests_mock
+):
     """Test the main block with a successful vectorization."""
     mock_card_dao.get_card_by_id.return_value = MOCK_CARD_DATA
 
@@ -335,7 +343,9 @@ def test_main_block_success(mock_load_dotenv, mock_print, mock_card_dao, request
 @patch("builtins.print")
 @patch("business_object.cardBusiness.load_dotenv")
 @patch.dict(os.environ, {"LLM_API_KEY": "test_api_key"})
-def test_main_block_error(mock_load_dotenv, mock_print, mock_card_dao, requests_mock):
+def test_main_block_error(
+    mock_load_dotenv, mock_print, mock_card_dao, requests_mock
+):
     """Test the main block with an error during vectorization."""
     mock_card_dao.get_card_by_id.return_value = MOCK_CARD_DATA
 

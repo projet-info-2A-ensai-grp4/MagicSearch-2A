@@ -16,13 +16,17 @@ class CardBusiness:
                 setattr(self, key, value)
 
     def __repr__(self):
-        attributes = ", ".join(f"{key}={getattr(self, key)}" for key in vars(self))
+        attributes = ", ".join(
+            f"{key}={getattr(self, key)}" for key in vars(self)
+        )
         return f"CardBusiness({attributes})"
 
     def generate_text_to_embed(self):
         """Generate and update the text_to_embed attribute of a card."""
         if not self.id:
-            raise ValueError("Impossible to generate text_to_embed without a card ID.")
+            raise ValueError(
+                "Impossible to generate text_to_embed without a card ID."
+            )
 
         fields = [
             self.name,
@@ -38,7 +42,9 @@ class CardBusiness:
         self.text_to_embed = text_to_embed
         return text_to_embed
 
-    def vectorize(self, text: str, endpoint_url: str, api_key: str = None) -> list:
+    def vectorize(
+        self, text: str, endpoint_url: str, api_key: str = None
+    ) -> list:
         """
         Vectorize the given text using the Ollama API.
 
@@ -64,7 +70,9 @@ class CardBusiness:
         }
 
         try:
-            response = requests.post(endpoint_url, json=payload, headers=headers)
+            response = requests.post(
+                endpoint_url, json=payload, headers=headers
+            )
             response.raise_for_status()  # Raise an exception for HTTP errors
 
             # Parse the response JSON
@@ -88,7 +96,9 @@ class CardBusiness:
 if __name__ == "__main__":
     with CardDao() as dao:
         try:
-            business = CardBusiness(dao, 420)  # Replace 420 with a valid card_id
+            business = CardBusiness(
+                dao, 420
+            )  # Replace 420 with a valid card_id
             print(business)
             print(f"Card name: {business.name}")
             print(f"Card text to embed: {business.text_to_embed}")

@@ -1,5 +1,5 @@
 import pytest
-import sqlite3 #simulating a fake database#
+import sqlite3
 from dao.cardDao import CardDao
 
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")

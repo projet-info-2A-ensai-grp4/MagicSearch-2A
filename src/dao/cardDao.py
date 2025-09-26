@@ -64,7 +64,8 @@ class CardDao(AbstractDao):
             int: The number of rows updated (should be 1 if successful).
 
         Raises:
-            ValueError: If card_id is not a positive integer or if no card was found with the given ID.
+            ValueError: If card_id is not a positive integer or if no card was
+            found with the given ID.
             TypeError: If embed_me is not a string.
             psycopg2.Error: If a database error occurs during the query execution.
         """

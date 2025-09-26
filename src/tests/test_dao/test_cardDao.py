@@ -1,14 +1,144 @@
 import pytest
+import sqlite3 #simulating a fake database#
 from dao.cardDao import CardDao
 
-pytestmark = pytest.mark.filterwarnings("ignore::UserWarning") # Used to warn user that None was returned (in case the card is non existent)
+pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
+# Used to warn user that None was returned#
+#  (in case the card is non existent)#
 
 
 @pytest.fixture
 def card_dao():
-    """Fixture to provide a CardDao instance for testing."""
-    with CardDao() as dao:
-        yield dao
+    conn = sqlite3.connect(":memory:")
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE cards (
+    id SERIAL PRIMARY KEY,
+    card_key VARCHAR,
+    name VARCHAR,
+    ascii_name VARCHAR,
+    text TEXT,
+    type VARCHAR,
+    layout VARCHAR,
+    mana_cost VARCHAR,
+    mana_value INT,
+    converted_mana_cost INT,
+    face_converted_mana_cost INT,
+    face_mana_value INT,
+    face_name VARCHAR,
+    first_printing DATE,
+    hand VARCHAR,
+    life VARCHAR,
+    loyalty VARCHAR,
+    power VARCHAR,
+    toughness VARCHAR,
+    side VARCHAR,
+    defense VARCHAR,
+    edhrec_rank INT,
+    edhrec_saltiness FLOAT,
+    is_funny BOOLEAN,
+    is_game_changer BOOLEAN,
+    is_reserved BOOLEAN,
+    has_alternative_deck_limit BOOLEAN,
+    colors VARCHAR,
+    color_identity VARCHAR,
+    color_indicator VARCHAR,
+    types VARCHAR,
+    subtypes VARCHAR,
+    supertypes VARCHAR,
+    keywords VARCHAR,
+    subsets VARCHAR,
+    printings VARCHAR,
+    scryfall_oracle_id UUID,
+    text_to_embed TEXT,
+    embedding VECTOR,   -- requires pgvector extension
+    raw JSON);
+    INSERT INTO cards (
+    id,
+    card_key,
+    name,
+    ascii_name,
+    text,
+    type,
+    layout,
+    mana_cost,
+    mana_value,
+    converted_mana_cost,
+    face_converted_mana_cost,
+    face_mana_value,
+    face_name,
+    first_printing,
+    hand,
+    life,
+    loyalty,
+    power,
+    toughness,
+    side,
+    defense,
+    edhrec_rank,
+    edhrec_saltiness,
+    is_funny,
+    is_game_changer,
+    is_reserved,
+    has_alternative_deck_limit,
+    colors,
+    color_identity,
+    color_indicator,
+    types,
+    subtypes,
+    supertypes,
+    keywords,
+    subsets,
+    printings,
+    scryfall_oracle_id,
+    text_to_embed,
+    embedding,
+    raw
+) VALUES (
+    420,
+    'example_key',
+    'Example Card',
+    'Example Card',
+    'This is an example text for the card.',
+    'Creature',
+    'normal',
+    '{1}{G}',
+    2,
+    2,
+    0,
+    0,
+    NULL,
+    '2020-01-01',
+    NULL,
+    NULL,
+    NULL,
+    '2',
+    '2',
+    NULL,
+    NULL,
+    1234,
+    0.5,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    'G',
+    'G',
+    NULL,
+    'Creature',
+    'Elf Druid',
+    NULL,
+    'Trample',
+    NULL,
+    'SET1',
+    '550e8400-e29b-41d4-a716-446655440000',
+    'Some text to embed',
+    '[0.1, 0.2, 0.3]', -- embedding vector, pgvector accepts array literal
+    '{"rarity": "rare", "artist": "John Doe"}');
+    """)
+    conn.commit()
+    yield conn
+    conn.close()
 
 
 def test_get_card_by_id(card_dao):

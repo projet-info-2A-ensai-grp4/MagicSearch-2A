@@ -1,33 +1,10 @@
 import psycopg2
 import warnings
 from psycopg2 import sql
+from abstractDao import AbstractDao
 
 
-class CardDao:
-    def __init__(self):
-        self.conn_params = {
-            "host": "postgresql-885217.user-victorjean",
-            "port": 5432,
-            "database": "defaultdb",
-            "user": "user-victorjean",
-            "password": "pr9yh1516s57jjnmw7ll",
-        }
-        self.conn = None
-        self.cursor = None
-
-    def __enter__(self):
-        """Enable context manager support."""
-        self.conn = psycopg2.connect(**self.conn_params)
-        self.cursor = self.conn.cursor()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Ensure resources are closed."""
-        if self.cursor:
-            self.cursor.close()
-        if self.conn:
-            self.conn.close()
-
+class CardDao(AbstractDao):
     def get_card_by_id(self, card_id):
         """Fetch a card by its ID and return it as a dictionary.
 
@@ -63,6 +40,18 @@ class CardDao:
             raise psycopg2.Error(
                 f"Database error while fetching card with ID {card_id}: {e}"
             )
+
+    def create(self, *args, **kwargs):
+        pass
+
+    def get_by_id(self, entity_id):
+        pass
+
+    def update(self, entity_id, *args, **kwargs):
+        pass
+
+    def delete(self, entity_id):
+        pass
 
     def edit_text_to_embed(self, embed_me, card_id):
         """Edit the text_to_embed value of a card.

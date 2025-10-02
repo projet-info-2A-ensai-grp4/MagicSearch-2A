@@ -56,7 +56,7 @@ def mock_card_dao():
         "embedding": "[0.1, 0.2, 0.3]",
         "raw": '{"rarity": "rare", "artist": "John Doe"}'
     }
-    dao = CardDao()
+    dao = MagicMock(spec=CardDao)
 
     def exist_side_effect(card_id):
         if not isinstance(card_id, int):

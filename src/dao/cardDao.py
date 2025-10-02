@@ -101,6 +101,22 @@ class CardDao(AbstractDao):
                 f"Database error while updating text_to_embed for card ID {card_id}: {str(e)}"
             )
 
+    def faceted_search():
+        """Allow multi-filter search across facets like type, set, color"""
+        pass
+
+    def filter_by_attributes():
+        """Filter cards using structured fields (mana, color, type, etc.)"""
+        pass
+
+    def full_text_search():
+        """Search cards by keywords in name, text, or type using text index"""
+        pass
+
+    def precomputed_tag_search():
+        """Search using pre-labeled categories like removal, ramp, draw"""
+        pass
+
 
 if __name__ == "__main__":
     with CardDao() as dao:

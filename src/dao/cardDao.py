@@ -1,7 +1,7 @@
 import psycopg2
 import warnings
 from psycopg2 import sql
-from abstractDao import AbstractDao
+from .abstractDao import AbstractDao
 
 
 class CardDao(AbstractDao):

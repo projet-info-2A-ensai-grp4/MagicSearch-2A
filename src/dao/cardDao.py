@@ -41,6 +41,9 @@ class CardDao(AbstractDao):
                 f"Database error while fetching card with ID {card_id}: {e}"
             )
 
+    def exist(self, id):
+        pass
+
     def create(self, *args, **kwargs):
         pass
 

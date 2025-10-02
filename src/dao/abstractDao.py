@@ -28,15 +28,19 @@ class AbstractDao(ABC):
             self.conn.close()
 
     @abstractmethod
+    def exist(self, id):
+        pass
+
+    @abstractmethod
     def create(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def get_by_id(self, entity_id):
+    def get_by_id(self, id):
         pass
 
     @abstractmethod
-    def update(self, entity_id, *args, **kwargs):
+    def update(self, id, *args, **kwargs):
         pass
 
     @abstractmethod

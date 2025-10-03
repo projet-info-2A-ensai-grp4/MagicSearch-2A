@@ -49,9 +49,14 @@ class CardBusiness:
                 "Impossible to generate text_to_embed without a card ID."
             )
 
-        text_to_embed = f"This is the description of a Magic The Gathering card, be aware that the description of the card may have some missing values, it is not a problem, it just means the card does not contain that kind of information (for example a spell usually does not have power and life). You know and master the rules of the Magic: The Gathering card game. If you need some explanation of the card, know that the cost is displayed like {{2}}{{R}}{{G}}{{B}}{{W}}{{U}}, which means 2 mana + 1 red + 1 green + 1 blue + 1 white + 1 uncolor, you understand the rest. for your notice {{T}} means to tap the card. Here are the most important caracteristics of a card: its name is {self.name}, its type is {self.type} and its description text is {self.text}, finally, the card cost is {self.mana_cost}. Logically the total mana value is {self.mana_value}. The power of the card is {self.power} and its toughness is {self.toughness}, its color identity is {self.color_identity}. The card also may have keywords (refer to the mtg rules): {self.keywords}."
+        text_description = f"This is the description of a Magic The Gathering card, be aware that the description of the card may have some missing values, it is not a problem, it just means the card does not contain that kind of information (for example a spell usually does not have power and life). You know and master the rules of the Magic: The Gathering card game. If you need some explanation of the card, know that the cost is displayed like {{2}}{{R}}{{G}}{{B}}{{W}}{{U}}, which means 2 mana + 1 red + 1 green + 1 blue + 1 white + 1 uncolor, you understand the rest. for your notice {{T}} means to tap the card. Here are the most important caracteristics of a card: its name is {self.name}, its type is {self.type} and its description text is ``{self.text}''. Finally, the card cost is {self.mana_cost}. Logically the total mana value is {self.mana_value}. The power of the card is {self.power} and its toughness is {self.toughness}, its color identity is {self.color_identity}. The card also may have keywords (refer to the mtg rules): {self.keywords}."
 
-        return text_to_embed
+        self.text_to_embed = text_description
+
+        with self.dao:
+            self.dao.edit_text_to_embed(self.text_to_embed, self.id)
+        
+        return self.text_to_embed
 
     def vectorize(
         self, text: str, endpoint_url: str, api_key: str = None
@@ -106,13 +111,16 @@ class CardBusiness:
 
 if __name__ == "__main__":
     with CardDao() as dao:
+        print(dao.get_card_by_id(421))
+
         try:
             business = CardBusiness(
-                dao, 420
-            )  # Replace 420 with a valid card_id
-            print(business)
-            print(f"Card name: {business.name}")
-            print(f"Card text to embed: {business.text_to_embed}")
+                dao, 421
+            )
+            # print(f"Card name: {business.name}")
+            business.generate_text_to_embed2()
+            # print(business.generate_text_to_embed2())
+            # print(f"Card text to embed: {business.text_to_embed}")
 
             # Update the endpoint URL to match the Ollama API
             endpoint_url = "https://llm.lab.sspcloud.fr/ollama/api/embed"
@@ -124,9 +132,8 @@ if __name__ == "__main__":
             embedding = business.vectorize(
                 business.text_to_embed, endpoint_url, api_key
             )
-            print(f"Vectorized embedding: {embedding}")
-            print(type(embedding))
+            # print(f"Vectorized embedding: {embedding}")
+            # print(type(embedding))
+
         except ValueError as e:
             print(f"Error: {e}")
-
-        print(business.generate_text_to_embed2())

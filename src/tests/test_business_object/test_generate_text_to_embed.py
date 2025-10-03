@@ -42,3 +42,5 @@ def test_generate_text_to_embed_with_colors(MockDao):
     assert result == "Adarkar Wastes | Land | {T}: Add {C}. | U, W"
     mock.edit_text_to_embed.assert_called_once_with(result, 420)
     assert b.text_to_embed == result
+
+# TODO: test generate_text_to_embed2 (Lina?)

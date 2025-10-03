@@ -82,7 +82,7 @@ def mock_card_dao():
 
 
 def test_exist(mock_card_dao):
-    """Test if a card exist with its id """
+    """Tests if a card exists with its id """
     dao, cursor = mock_card_dao
     result_True = dao.exist(420)
     result_False = dao.exist(999)

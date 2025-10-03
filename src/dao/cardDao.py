@@ -5,6 +5,49 @@ from .abstractDao import AbstractDao
 
 
 class CardDao(AbstractDao):
+    VALID_COLUMNS = {
+        "id",
+        "card_key",
+        "name",
+        "ascii_name",
+        "text",
+        "type",
+        "layout",
+        "mana_cost",
+        "mana_value",
+        "converted_mana_cost",
+        "face_converted_mana_cost",
+        "face_mana_value",
+        "face_name",
+        "first_printing",
+        "hand",
+        "life",
+        "loyalty",
+        "power",
+        "toughness",
+        "side",
+        "defense",
+        "edhrec_rank",
+        "edhrec_saltiness",
+        "is_funny",
+        "is_game_changer",
+        "is_reserved",
+        "has_alternative_deck_limit",
+        "colors",
+        "color_identity",
+        "color_indicator",
+        "types",
+        "subtypes",
+        "supertypes",
+        "keywords",
+        "subsets",
+        "printings",
+        "scryfall_oracle_id",
+        "text_to_embed",
+        "embedding",
+        "raw",
+    }
+
     def exist(self, id):
         if not isinstance(id, int):
             raise TypeError("Card ID must be an integer")
@@ -77,7 +120,7 @@ class CardDao(AbstractDao):
                 if conn:
                     conn.close
 
-    def create(self, *args, **kwargs):
+    def create(self, **kwargs):
         pass
 
     def update(self, entity_id, *args, **kwargs):

@@ -81,10 +81,10 @@ def mock_card_dao():
     def create_effect(card_data):
         if not isinstance(card_data, dict):
             raise TypeError("Card data must be a dictionary")
+        if not isinstance(card_data.get("id"), int) or card_data.get("id") < 0:
+            raise TypeError("Card Id must be a positive integer")
         if card_data.get("id") == 420:
             raise Exception("Card with this Id already exists")
-        if card_data.get("id") < 0:
-            raise ValueError("Card Id must be a positive integer")
         if not isinstance(card_data.get("id"), int):
             raise TypeError("Card Id must be an integer")
         return card_data
@@ -157,13 +157,13 @@ def test_create(mock_card_dao):
     with pytest.raises(TypeError, match="Card data must be a dictionary"):
         mock_card_dao.create("not a dict")
     # unvalid id type
-    with pytest.raises(TypeError, match="Card Id must be an integer"):
+    with pytest.raises(TypeError, match="Card Id must be a positive integer"):
         mock_card_dao.create({"id": "a", "name": "Duplicate Card"})
     # Duplicate case
     with pytest.raises(Exception, match="Card with this Id already exists"):
         mock_card_dao.create({"id": 420, "name": "Duplicate Card"})
     # id non-negative
-    with pytest.raises(ValueError, match="Card Id must be a positive integer"):
+    with pytest.raises(TypeError, match="Card Id must be a positive integer"):
         mock_card_dao.create({"id": -1, "name": "Duplicate Card"})
 
 

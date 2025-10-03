@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
+from psycopg2 import sql
 from dao.userDao import UserDao
+
 
 @pytest.fixture
 def mock_user_dao():
@@ -15,7 +17,7 @@ def mock_user_dao():
         "password_hash": "5d41402abc4b2a76b9719d911017c592"}
     
     # Patch psycopg2.connect to return a mock connection
-    with patch("psycopg2.connect") as mock_connect:
+    with patch("dao.abstractDao.psycopg2.connect") as mock_connect:
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_connect.return_value = mock_conn
@@ -41,7 +43,10 @@ def mock_user_dao():
 
 
 def test_exist(mock_user_dao):
-    """Tests if a user exists with its id """
+    """
+    Tests if an ID is well detected into the database.
+    Tests if a negative ID, or a non-integer ID is detected by the function.
+    """
     dao, cursor = mock_user_dao
     result_True = dao.exist(56)
     result_False = dao.exist(99)
@@ -52,4 +57,20 @@ def test_exist(mock_user_dao):
     with pytest.raises(TypeError, match="User ID must be an integer"):
         dao.exist("A")
     cursor.execute.assert_called()
+
+
+def test_create(mock_user_dao):
+    """
+    Tests if a user is well created in the database.
+    """
+    dao, cursor = mock_user_dao
+    new_user_id = dao.create("Hermione Granger",
+                             "hermione@hogwarts.com",
+                             "5d41402abc4b2a76b9719d911017c592")
+    assert new_user_id == 2
+    cursor.execute.assert_called()
+
+
+def test_get_by_id():
+    pass
 

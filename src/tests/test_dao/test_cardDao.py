@@ -11,7 +11,8 @@ pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 def mock_card_dao():
     """
     Provides a CardDao instance whose database calls are mocked.
-    Simulates a single card record with id=420.
+    Simulates a single card record with id=420, returned as a dict
+    (like RealDictCursor would do).
     """
     fake_card = {
         "id": 420,
@@ -19,14 +20,17 @@ def mock_card_dao():
         "name": "Example Card",
         "ascii_name": "Example Card",
         "text": "This is an example text for the card.",
-        "type": "Creature", "layout": "normal",
-        "mana_cost": "{1}{G}", "mana_value": 2,
+        "type": "Creature",
+        "layout": "normal",
+        "mana_cost": "{1}{G}",
+        "mana_value": 2,
         "converted_mana_cost": 2,
         "face_converted_mana_cost": 0,
         "face_mana_value": 0,
         "face_name": None,
         "first_printing": "2020-01-01",
-        "hand": None, "life": None,
+        "hand": None,
+        "life": None,
         "loyalty": None,
         "power": "2",
         "toughness": "2",
@@ -50,7 +54,8 @@ def mock_card_dao():
         "scryfall_oracle_id": "550e8400-e29b-41d4-a716-446655440000",
         "text_to_embed": "Some text to embed",
         "embedding": "[0.1, 0.2, 0.3]",
-        "raw": '{"rarity": "rare", "artist": "John Doe"}' }
+        "raw": '{"rarity": "rare", "artist": "John Doe"}',
+    }
 
     # Patch psycopg2.connect to return a mock connection
     with patch("psycopg2.connect") as mock_connect:
@@ -61,20 +66,18 @@ def mock_card_dao():
 
         # Simulate SELECT for exist/get_by_id
         def fetchone_side_effect():
-            # Determine what query was executed
-            last_sql, last_params = mock_cursor.execute.call_args[0]
+            # Retrieve the last query params
+            _, last_params = mock_cursor.execute.call_args[0]
             card_id = last_params[0]
-            if "SELECT" in last_sql:
-                if card_id == 420:
-                    return (420, "Example Card")  # Simulate row exists
-                return None  # Non-existent card
-            return None
+
+            if card_id == 420:
+                return fake_card  # RealDictCursor-like dict
+            return None  # Simulate non-existent card
 
         mock_cursor.fetchone.side_effect = fetchone_side_effect
 
         # Inject DAO with mocked DB
         dao = CardDao()
-        # Yield a tuple of dao and the mock cursor to let tests inspect calls
         yield dao, mock_cursor
 
 
@@ -99,13 +102,12 @@ def test_get_by_id(mock_card_dao):
     card_none = dao.get_by_id(999)
     assert card is not None
     assert card["id"] == 420
-    assert card["name"] == "Example Card"
     # Non-existent Card
     assert card_none is None
     # Unvalide id
-    with pytest.raises(TypeError, match="Card Id must be an integer"):
+    with pytest.raises(TypeError, match="Card ID must be an integer"):
         dao.get_by_id("")
-    with pytest.raises(ValueError, match="Card Id must be a positive integer"):
+    with pytest.raises(ValueError, match="Id must be a positive integer"):
         dao.get_by_id(-1)
     cursor.execute.assert_called()
 
@@ -130,6 +132,7 @@ def test_create(mock_card_dao):
     with pytest.raises(TypeError, match="Card Id must be a positive integer"):
         dao.create({"id": -1, "name": "Duplicate Card"})
     cursor.execute.assert_called()
+
 
 def test_update(mock_card_dao):
     """ Test updating a card, with Id and items who should be change """

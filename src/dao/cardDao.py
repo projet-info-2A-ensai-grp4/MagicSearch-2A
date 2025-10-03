@@ -1,46 +1,10 @@
 import psycopg2
-import warnings
 from psycopg2 import sql
+from psycopg2.extras import RealDictCursor
 from .abstractDao import AbstractDao
 
 
 class CardDao(AbstractDao):
-    def get_card_by_id(self, card_id):
-        """Fetch a card by its ID and return it as a dictionary.
-
-        Args:
-            card_id (int): The ID of the card to fetch.
-
-        Returns:
-            dict: A dictionary representing the card, where keys are column names.
-                  Returns `None` if no card is found with the given ID.
-
-        Raises:
-            ValueError: If the provided `card_id` is not a positive integer.
-            psycopg2.Error: If a database error occurs during the query execution.
-        """
-        if not isinstance(card_id, int) or card_id <= 0:
-            raise ValueError("card_id must be a positive integer.")
-
-        try:
-            query = sql.SQL("SELECT * FROM cards WHERE id = %s;")
-            self.cursor.execute(query, (card_id,))
-
-            columns = [desc[0] for desc in self.cursor.description]
-            row = self.cursor.fetchone()
-
-            if row:
-                return dict(zip(columns, row))
-            else:
-                warnings.warn(f"No card found with ID {card_id}. Returning None.", UserWarning)
-                return None
-
-        except psycopg2.Error as e:
-            # Log the error or handle it as needed
-            raise psycopg2.Error(
-                f"Database error while fetching card with ID {card_id}: {e}"
-            )
-
     def exist(self, id):
         if not isinstance(id, int):
             raise TypeError("Card ID must be an integer")
@@ -58,7 +22,7 @@ class CardDao(AbstractDao):
             print(f"Error connecting to the database: {e}")
             exit()
         try:
-            cursor = conn.cursor()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
             sql_query = """
             SELECT * FROM cards WHERE id = %s LIMIT 1;
             """
@@ -72,10 +36,48 @@ class CardDao(AbstractDao):
             if conn:
                 conn.close
 
-    def create(self, *args, **kwargs):
-        pass
+    def get_by_id(self, id):
+        """Fetch a card by its ID and return it as a dictionary.
 
-    def get_by_id(self, entity_id):
+        Args:
+            card_id (int): The ID of the card to fetch.
+
+        Returns:
+            dict: A dictionary representing the card, where keys are column names.
+                  Returns `None` if no card is found with the given ID.
+
+        Raises:
+            ValueError: If the provided `card_id` is not a positive integer.
+            psycopg2.Error: If a database error occurs during the query execution.
+        """
+        if self.exist(id):
+            try:
+                conn = psycopg2.connect(
+                    dbname="defaultdb",
+                    user="user-victorjean",
+                    password="pr9yh1516s57jjnmw7ll",
+                    host="postgresql-885217.user-victorjean",
+                    port="5432",
+                )
+            except Exception as e:
+                print(f"Error connecting to the database: {e}")
+                exit()
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                sql_query = """
+                SELECT * FROM cards WHERE id = %s LIMIT 1;
+                """
+                param = (id,)
+                cursor.execute(sql_query, param)
+                row = cursor.fetchone()
+                return row
+            finally:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close
+
+    def create(self, *args, **kwargs):
         pass
 
     def update(self, entity_id, *args, **kwargs):

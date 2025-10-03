@@ -6,7 +6,7 @@ import requests
 import os
 from dotenv import load_dotenv
 
-pytestmark = pytest.mark.filterwarnings("ignore::UserWarning") # Used to warn user that None was returned (in case the card is non existent)
+pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")  # Used to warn user that None was returned (in case the card is non existent)
 
 # Mock data for testing
 MOCK_CARD_DATA = {

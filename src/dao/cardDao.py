@@ -42,7 +42,35 @@ class CardDao(AbstractDao):
             )
 
     def exist(self, id):
-        pass
+        if not isinstance(id, int):
+            raise TypeError("Card ID must be an integer")
+        if id < 0:
+            raise ValueError("Id must be a positive integer")
+        try:
+            conn = psycopg2.connect(
+                dbname="defaultdb",
+                user="user-victorjean",
+                password="pr9yh1516s57jjnmw7ll",
+                host="postgresql-885217.user-victorjean",
+                port="5432",
+            )
+        except Exception as e:
+            print(f"Error connecting to the database: {e}")
+            exit()
+        try:
+            cursor = conn.cursor()
+            sql_query = """
+            SELECT * FROM cards WHERE id = %s LIMIT 1;
+            """
+            param = (id,)
+            cursor.execute(sql_query, param)
+            row = cursor.fetchone()
+            return row is not None
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close
 
     def create(self, *args, **kwargs):
         pass

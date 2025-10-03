@@ -1,15 +1,13 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from dao.cardDao import CardDao
-from business_object.cardBusiness import (
-    CardBusiness,
-)  # Replace `your_module` with the actual module name
+from business_object.cardBusiness import CardBusiness  # Replace `your_module` with the actual module name
 import os
 from dotenv import load_dotenv
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore::UserWarning"
-)  # Used to warn user that None was returned (in case the card is non existent)
+)   # Used to warn user that None was returned (in case the card is non existent)
 
 # Mock data for testing
 MOCK_CARD_DATA = {

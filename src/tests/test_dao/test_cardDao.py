@@ -11,10 +11,10 @@ pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 def mock_card_dao():
     """
     Provides a CardDao instance whose database calls are mocked.
-    Simulates a single card record with id=420, returned as a dict
-    (like RealDictCursor would do).
+    Simulates a database with cards stored in a dict keyed by ID.
     """
-    fake_card = {
+    # Base fake card
+    base_card = {
         "id": 420,
         "card_key": "example_key",
         "name": "Example Card",
@@ -57,33 +57,45 @@ def mock_card_dao():
         "raw": '{"rarity": "rare", "artist": "John Doe"}',
     }
 
-    # Patch psycopg2.connect to return a mock connection
+    # Simulated DB: dict[id] -> card
+    fake_db = {420: base_card.copy()}
+    next_id = [421]
+
     with patch("psycopg2.connect") as mock_connect:
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
-        # Simulate SELECT for exist/get_by_id
-        def fetchone_side_effect():
-            # Retrieve the last query params
-            _, last_params = mock_cursor.execute.call_args[0]
-            card_id = last_params[0]
+        # fetchone side effect
+        def fetchone_side_effect(*args, **kwargs):
+            last_query = mock_cursor.execute.call_args[0][0]
+            params = mock_cursor.execute.call_args[0][1] if len(
+                mock_cursor.execute.call_args[0]) > 1 else None
 
-            if card_id == 420:
-                return fake_card  # RealDictCursor-like dict
-            return None  # Simulate non-existent card
+            if last_query.strip().upper().startswith("INSERT"):
+                card_data = {col: None for col in dao.columns_valid if col != "id"}
+                if params:
+                    for i, key in enumerate(card_data.keys()):
+                        if i < len(params):
+                            card_data[key] = params[i]
+                card_data["id"] = next_id[0]
+                next_id[0] += 1
+                fake_db[card_data["id"]] = card_data
+                return card_data
+            elif last_query.strip().upper().startswith("SELECT"):
+                card_id = params[0]
+                return fake_db.get(card_id)
+            return None
 
         mock_cursor.fetchone.side_effect = fetchone_side_effect
-
-        # Inject DAO with mocked DB
         dao = CardDao()
-        yield dao, mock_cursor
+        yield dao, mock_cursor, fake_db
 
 
 def test_exist(mock_card_dao):
     """Tests if a card exists with its id """
-    dao, cursor = mock_card_dao
+    dao, cursor, fake_db = mock_card_dao
     result_True = dao.exist(420)
     result_False = dao.exist(999)
     assert result_True is True
@@ -97,7 +109,7 @@ def test_exist(mock_card_dao):
 
 def test_get_by_id(mock_card_dao):
     """Test fetching a card by ID."""
-    dao, cursor = mock_card_dao
+    dao, cursor, fake_db = mock_card_dao
     card = dao.get_by_id(420)
     card_none = dao.get_by_id(999)
     assert card is not None
@@ -113,30 +125,27 @@ def test_get_by_id(mock_card_dao):
 
 
 def test_create(mock_card_dao):
-    """ Test creating a card with a samble of items """
-    dao, cursor = mock_card_dao
-    new_card = {"id": 421, "name": "New Card"}
-    created_card = dao.create(new_card)
-    assert created_card["id"] == 421
+    """Test creating a card with a sample of valid and invalid inputs."""
+    dao, cursor, fake_db = mock_card_dao
+    # Valid creation
+    created_card = dao.create(name="New Card", type="Spell", mana_value=1)
+    assert created_card["id"] in fake_db
     assert created_card["name"] == "New Card"
-    # Unvalid type of new_card
-    with pytest.raises(TypeError, match="Card data must be a dictionary"):
-        dao.create("not a dict")
-    # unvalid id type
-    with pytest.raises(TypeError, match="Card Id must be a positive integer"):
-        dao.create({"id": "a", "name": "Duplicate Card"})
-    # Duplicate case
-    with pytest.raises(Exception, match="Card with this Id already exists"):
-        dao.create({"id": 420, "name": "Duplicate Card"})
-    # id non-negative
-    with pytest.raises(TypeError, match="Card Id must be a positive integer"):
-        dao.create({"id": -1, "name": "Duplicate Card"})
+    assert created_card["type"] == "Spell"
+    assert created_card["mana_value"] == 1
+    another_card = dao.create(name="Second Card")
+    assert another_card["id"] != created_card["id"]
+    assert another_card["name"] == "Second Card"
+    # RETURNING * calling
     cursor.execute.assert_called()
+    # invalide keys
+    with pytest.raises(ValueError, match="Invalid keys"):
+        dao.create(nonexistent_column="Oops")
 
 
 def test_update(mock_card_dao):
     """ Test updating a card, with Id and items who should be change """
-    dao, cursor = mock_card_dao
+    dao, cursor, fake_db = mock_card_dao
     updated_data = {"name": "Updated Card"}
     updated_card = dao.update(420, updated_data)
     assert updated_card["id"] == 420

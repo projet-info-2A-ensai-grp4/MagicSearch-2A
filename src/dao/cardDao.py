@@ -5,7 +5,8 @@ from .abstractDao import AbstractDao
 
 
 class CardDao(AbstractDao):
-    VALID_COLUMNS = {
+
+    columns_valid = {
         "id",
         "card_key",
         "name",
@@ -49,6 +50,26 @@ class CardDao(AbstractDao):
     }
 
     def exist(self, id):
+        """
+        Check if a card with the given ID exists in the database.
+
+        Args:
+            id (int): The ID of the card to check. Must be a non-negative integer.
+
+        Returns:
+            bool: True if a card with the specified ID exists, False otherwise.
+
+        Raises:
+            TypeError: If `id` is not an integer.
+            ValueError: If `id` is a negative integer.
+            Exception: If there is an error connecting to the database.
+
+        Notes:
+            - The method connects to a PostgreSQL database using `psycopg2`.
+            - It queries the `cards` table and checks for the presence of a row
+              with the specified `id`.
+            - Database connection is properly closed after execution.
+        """
         if not isinstance(id, int):
             raise TypeError("Card ID must be an integer")
         if id < 0:
@@ -121,7 +142,82 @@ class CardDao(AbstractDao):
                     conn.close
 
     def create(self, **kwargs):
-        pass
+        """
+        Insert a new record into the `cards` table.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Key-value pairs representing the columns and values to insert into the `cards` table.
+            Only keys present in `self.columns_valid` (except 'id') are allowed.
+            Missing columns will default to `None`.
+
+        Returns
+        -------
+        dict
+            A dictionary representing the newly created card, with all columns returned
+            by the database, including auto-generated ones like `id`.
+
+        Raises
+        ------
+        ValueError
+            If `kwargs` contains any keys not listed in `self.columns_valid`.
+        psycopg2.DatabaseError
+            If an error occurs while connecting to the database or executing the query.
+
+        Notes
+        -----
+        - The `id` column is assumed to be auto-generated
+          by the database and should not be included in `kwargs`.
+        - This function uses parameterized queries to prevent SQL injection.
+        - Database credentials are currently hardcoded and
+          should ideally be managed securely via environment variables.
+
+        Example
+        -------
+        >>> card_manager = CardManager()
+        >>> new_card = card_manager.create(name="Ace of Spades", value=14, suit="Spades")
+        >>> print(new_card)
+        {'id': 101, 'name': 'Ace of Spades', 'value': 14, 'suit': 'Spades'}
+        """
+        if not (set(kwargs.keys()).issubset(self.columns_valid)):
+            raise ValueError(
+                f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
+            )
+        card_data = {
+            key: kwargs.get(key, None) for key in self.columns_valid if key != "id"
+        }
+        # Add None for the keys None - specified.
+        try:
+            conn = psycopg2.connect(
+                dbname="defaultdb",
+                user="user-victorjean",
+                password="pr9yh1516s57jjnmw7ll",
+                host="postgresql-885217.user-victorjean",
+                port="5432",
+            )
+        except Exception as e:
+            print(f"Error connecting to the database: {e}")
+            exit()
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            columns = ", ".join(card_data.keys())
+            placeholders = ", ".join(["%s"] * len(card_data))
+            sql_query = f"""
+            INSERT INTO cards ({columns})
+            VALUES ({placeholders})
+            RETURNING *;
+            """
+            params = tuple(card_data.values())
+            cursor.execute(sql_query, params)
+            conn.commit()
+            new_card = cursor.fetchone()
+            return new_card
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close
 
     def update(self, entity_id, *args, **kwargs):
         pass

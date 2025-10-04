@@ -73,7 +73,7 @@ class CardDao(AbstractDao):
         if not isinstance(id, int):
             raise TypeError("Card ID must be an integer")
         if id < 0:
-            raise ValueError("Id must be a positive integer")
+            raise ValueError("Card ID must be a positive integer")
         try:
             conn = psycopg2.connect(
                 dbname="defaultdb",
@@ -219,8 +219,44 @@ class CardDao(AbstractDao):
             if conn:
                 conn.close
 
-    def update(self, entity_id, *args, **kwargs):
-        pass
+    def update(self, id, *args, **kwargs):
+        if self.exist(id):
+            if not (set(kwargs.keys()).issubset(self.columns_valid)):
+                raise ValueError(
+                    f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
+                )
+            columns = list(kwargs.keys())
+            values = list(kwargs.values())
+            try:
+                conn = psycopg2.connect(
+                    dbname="defaultdb",
+                    user="user-victorjean",
+                    password="pr9yh1516s57jjnmw7ll",
+                    host="postgresql-885217.user-victorjean",
+                    port="5432",
+                )
+            except Exception as e:
+                print(f"Error connecting to the database: {e}")
+                exit()
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                set_clause = ", ".join([f"{col} = %s" for col in columns])
+                sql_query = f"""
+                    UPDATE cards
+                    SET {set_clause}
+                    WHERE id = %s
+                    RETURNING *;
+                """
+                params = (*values, id)
+                cursor.execute(sql_query, params)
+                conn.commit()
+                updated_card = cursor.fetchone()
+                return updated_card
+            finally:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close
 
     def delete(self, entity_id):
         pass
@@ -249,7 +285,7 @@ class CardDao(AbstractDao):
             raise ValueError("embed_me cannot be empty or whitespace only")
 
         if not isinstance(card_id, int) or card_id <= 0:
-            raise ValueError("card_id must be a positive integer")
+            raise ValueError("Card ID must be a positive integer")
 
         try:
             # Execute the update query

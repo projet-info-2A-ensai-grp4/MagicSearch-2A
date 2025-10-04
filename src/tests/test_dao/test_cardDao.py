@@ -67,13 +67,17 @@ def mock_card_dao():
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
+        dao = CardDao()
+
         # fetchone side effect
         def fetchone_side_effect(*args, **kwargs):
             last_query = mock_cursor.execute.call_args[0][0]
             params = mock_cursor.execute.call_args[0][1] if len(
                 mock_cursor.execute.call_args[0]) > 1 else None
+            sql = last_query.strip().upper()
 
-            if last_query.strip().upper().startswith("INSERT"):
+            # --- INSERT ---
+            if sql.startswith("INSERT"):
                 card_data = {col: None for col in dao.columns_valid if col != "id"}
                 if params:
                     for i, key in enumerate(card_data.keys()):
@@ -83,13 +87,33 @@ def mock_card_dao():
                 next_id[0] += 1
                 fake_db[card_data["id"]] = card_data
                 return card_data
-            elif last_query.strip().upper().startswith("SELECT"):
+
+            # --- SELECT ---
+            elif sql.startswith("SELECT"):
                 card_id = params[0]
                 return fake_db.get(card_id)
+
+            # --- UPDATE ---
+            elif sql.startswith("UPDATE"):
+                card_id = params[-1]
+                if card_id in fake_db:
+                    set_part = sql.split("SET")[1].split("WHERE")[0]
+                    cols = [part.split("=")[0].strip().lower() for part in set_part.split(",")]
+                    for i, col in enumerate(cols):
+                        if i < len(params) - 1:
+                            fake_db[card_id][col] = params[i]
+                    return fake_db[card_id]
+                else:
+                    return None
+
+            # --- DELETE ---
+            elif sql.startswith("DELETE"):
+                card_id = params[0]
+                return fake_db.pop(card_id, None)
+
             return None
 
         mock_cursor.fetchone.side_effect = fetchone_side_effect
-        dao = CardDao()
         yield dao, mock_cursor, fake_db
 
 
@@ -100,7 +124,7 @@ def test_exist(mock_card_dao):
     result_False = dao.exist(999)
     assert result_True is True
     assert result_False is False
-    with pytest.raises(ValueError, match="Id must be a positive integer"):
+    with pytest.raises(ValueError, match="Card ID must be a positive integer"):
         dao.exist(-1)
     with pytest.raises(TypeError, match="Card ID must be an integer"):
         dao.exist("A")
@@ -119,7 +143,7 @@ def test_get_by_id(mock_card_dao):
     # Unvalide id
     with pytest.raises(TypeError, match="Card ID must be an integer"):
         dao.get_by_id("")
-    with pytest.raises(ValueError, match="Id must be a positive integer"):
+    with pytest.raises(ValueError, match="Card ID must be a positive integer"):
         dao.get_by_id(-1)
     cursor.execute.assert_called()
 
@@ -146,22 +170,18 @@ def test_create(mock_card_dao):
 def test_update(mock_card_dao):
     """ Test updating a card, with Id and items who should be change """
     dao, cursor, fake_db = mock_card_dao
-    updated_data = {"name": "Updated Card"}
-    updated_card = dao.update(420, updated_data)
+    updated_card = dao.update(420, name="Updated Card")
     assert updated_card["id"] == 420
     assert updated_card["name"] == "Updated Card"
     # Non-existent card
     result_none = dao.update(999, {"name": "No Card"})
     assert result_none is None
     # Invalid Id
-    with pytest.raises(TypeError, match="Card Id must be an integer"):
+    with pytest.raises(TypeError, match="Card ID must be an integer"):
         dao.update("abc", {"name": "Test"})
-    # Invalid update data
-    with pytest.raises(TypeError, match="Update data must be a dictionary"):
-        dao.update(420, "not a dict")
     # Non positive Id
-    with pytest.raises(ValueError, match="Card Id must be a positive integer"):
-        dao.update(-1, {"name": "Test"})
+    with pytest.raises(ValueError, match="Card ID must be a positive integer"):
+        dao.update(-1, name="Updated Card")
     cursor.execute.assert_called()
 
 
@@ -174,9 +194,9 @@ def test_delete(mock_card_dao):
     result_false = dao.delete(999)
     assert result_false is False
     # Invalid Id type
-    with pytest.raises(TypeError, match="Card Id must be an integer"):
+    with pytest.raises(TypeError, match="Card ID must be an integer"):
         dao.delete("abc")
     # Non positive Id
-    with pytest.raises(ValueError, match="Card Id must be a positive integer"):
+    with pytest.raises(ValueError, match="Card ID must be a positive integer"):
         dao.delete(-1)
     cursor.execute.assert_called()

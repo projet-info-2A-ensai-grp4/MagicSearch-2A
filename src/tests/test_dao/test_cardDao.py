@@ -187,12 +187,13 @@ def test_update(mock_card_dao):
 
 def test_delete(mock_card_dao):
     """Test deleting a card with various scenarios."""
-    dao, cursor = mock_card_dao
+    dao, cursor, fake_db = mock_card_dao
     result = dao.delete(420)
-    assert result is True
+    assert result["name"] == "Example Card"
+    assert dao.exist(420) is False
     # Non-existent card
     result_false = dao.delete(999)
-    assert result_false is False
+    assert result_false is None
     # Invalid Id type
     with pytest.raises(TypeError, match="Card ID must be an integer"):
         dao.delete("abc")

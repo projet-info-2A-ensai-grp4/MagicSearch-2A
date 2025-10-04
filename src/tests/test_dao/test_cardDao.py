@@ -76,6 +76,9 @@ def mock_card_dao():
                 mock_cursor.execute.call_args[0]) > 1 else None
             sql = last_query.strip().upper()
 
+            # --- COUNT ---
+            if "COUNT(*)" in sql:
+                return {"count": len(fake_db)}
             # --- INSERT ---
             if sql.startswith("INSERT"):
                 card_data = {col: None for col in dao.columns_valid if col != "id"}
@@ -115,6 +118,15 @@ def mock_card_dao():
 
         mock_cursor.fetchone.side_effect = fetchone_side_effect
         yield dao, mock_cursor, fake_db
+
+
+def test_shape(mock_card_dao):
+    """Test the shape method of the DAO."""
+    dao, cursor, fake_db = mock_card_dao
+    row_count, col_count = dao.shape()
+    assert row_count == len(fake_db)
+    assert col_count == len(dao.columns_valid)
+    cursor.execute.assert_called()
 
 
 def test_exist(mock_card_dao):

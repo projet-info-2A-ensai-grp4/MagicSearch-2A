@@ -49,6 +49,54 @@ class CardDao(AbstractDao):
         "raw",
     }
 
+    def shape(self):
+        """
+        Retrieve the shape of the cards dataset in the database.
+
+        This method connects to the PostgreSQL database and fetches two key pieces
+        of information about the "cards" table:
+
+        1. The total number of rows (cards) in the table.
+        2. The total number of valid columns as defined in the DAO.
+
+        Returns
+        -------
+        tuple
+            A tuple of the form `(row_count, column_count)` where:
+            - `row_count` (int): The number of rows in the `cards` table.
+            - `column_count` (int): The number of columns tracked in `self.columns_valid`.
+
+        Raises
+        ------
+        Exception
+            If a database connection cannot be established, the method prints the
+            error and exits the program.
+        """
+        try:
+            conn = psycopg2.connect(
+                dbname="defaultdb",
+                user="user-victorjean",
+                password="pr9yh1516s57jjnmw7ll",
+                host="postgresql-885217.user-victorjean",
+                port="5432",
+            )
+        except Exception as e:
+            print(f"Error connecting to the database: {e}")
+            exit()
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            sql_query = """
+            SELECT count(*) FROM cards;
+            """
+            cursor.execute(sql_query)
+            row = cursor.fetchone()
+            return row.get('count'), len(self.columns_valid)
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close
+
     def exist(self, id):
         """
         Check if a card with the given ID exists in the database.
@@ -315,6 +363,7 @@ class CardDao(AbstractDao):
                 param = (id,)
                 cursor.execute(sql_query, param)
                 row = cursor.fetchone()
+                conn.commit()
                 return row
             finally:
                 if cursor:

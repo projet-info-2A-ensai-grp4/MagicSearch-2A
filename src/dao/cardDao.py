@@ -220,6 +220,40 @@ class CardDao(AbstractDao):
                 conn.close
 
     def update(self, id, *args, **kwargs):
+        """
+        Update a card in the database by its ID with the provided field values.
+
+        This method checks that the card exists and that all provided field names
+        are valid columns. It then constructs and executes an SQL UPDATE query
+        using parameterized values to prevent SQL injection, commits the change,
+        and returns the updated card as a dictionary.
+
+        Parameters
+        ----------
+        id : int
+            The unique identifier of the card to update. Must be a positive integer.
+        *args
+            Positional arguments are ignored; updates should be passed as keyword arguments.
+        **kwargs
+            Field names and their new values to update. Keys must be a subset of valid
+            column names defined in `self.columns_valid`.
+
+        Returns
+        -------
+        dict or None
+            A dictionary representing the updated card if the update succeeds,
+            or None if the card with the specified ID does not exist.
+
+        Raises
+        ------
+        ValueError
+            If any key in `kwargs` is not a valid column name.
+        TypeError
+            If `id` is not an integer or `kwargs` is not a dictionary.
+        Exception
+            If a database connection error occurs, the program exits after printing
+            the error.
+        """
         if self.exist(id):
             if not (set(kwargs.keys()).issubset(self.columns_valid)):
                 raise ValueError(
@@ -258,8 +292,35 @@ class CardDao(AbstractDao):
                 if conn:
                     conn.close
 
-    def delete(self, entity_id):
-        pass
+    def delete(self, id):
+        if self.exist(id):
+            try:
+                conn = psycopg2.connect(
+                    dbname="defaultdb",
+                    user="user-victorjean",
+                    password="pr9yh1516s57jjnmw7ll",
+                    host="postgresql-885217.user-victorjean",
+                    port="5432",
+                )
+            except Exception as e:
+                print(f"Error connecting to the database: {e}")
+                exit()
+            try:
+                cursor = conn.cursor(cursor_factory=RealDictCursor)
+                sql_query = """
+                DELETE FROM cards
+                WHERE id = %s
+                RETURNING *;
+                """
+                param = (id,)
+                cursor.execute(sql_query, param)
+                row = cursor.fetchone()
+                return row
+            finally:
+                if cursor:
+                    cursor.close()
+                if conn:
+                    conn.close
 
     def edit_text_to_embed(self, embed_me, card_id):
         """Edit the text_to_embed value of a card.

@@ -7,7 +7,7 @@ from .abstractDao import AbstractDao
 class UserDao(AbstractDao):
     def exist(self, id):
         """
-        Tests if a user exists with its ID.
+        Verifies if a user exists with its ID.
         """
         if not isinstance(id, int):
             raise TypeError("User ID must be an integer")
@@ -24,20 +24,17 @@ class UserDao(AbstractDao):
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
-        try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            sql_query = """
-            SELECT * FROM users WHERE id = %s LIMIT 1;
-            """
-            param = (id,)
-            cursor.execute(sql_query, param)
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                "SELECT *        "
+                "FROM users      "
+                "WHERE id = %s   "
+                "LIMIT 1         ",
+                (id,)
+            )
             row = cursor.fetchone()
-            return row is not None
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close
+        cursor.close()
+        return row is not None
 
     # CREATE
 
@@ -46,12 +43,10 @@ class UserDao(AbstractDao):
         Create a new user into the users database.
 
         Args:
-        username (str)
-        email (str)
-        password_hash (str)
+        user
 
         Returns:
-        user_id (int): the ID of the newly created user.
+        id (int): the ID of the newly created user.
         """
         try:
             conn = psycopg2.connect(
@@ -64,19 +59,44 @@ class UserDao(AbstractDao):
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
-        query = sql.SQL("""
-            INSERT INTO users (username, email, password_hash)
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """)
         with conn.cursor() as cur:
-            cur.execute(query, (username, email, password_hash))
-            user_id = cur.fetchone()[0]
-        conn.commit()
-        conn.close()
-        return user_id
+            cur.execute(
+                "INSERT INTO users (username, email, password_hash)   "
+                "VALUES (%s, %s, %s)  "
+                "   RETURNING id_user                                 ",
+                (username, email, password_hash),
+            )
+            new_id = cur.fetchone()[0]
+            conn.commit()
+            return new_id
 
     # READ
+
+    def get_all(self):
+        """
+        Get all users of the database.
+        """
+        try:
+            conn = psycopg2.connect(
+                dbname="defaultdb",
+                user="user-victorjean",
+                password="pr9yh1516s57jjnmw7ll",
+                host="postgresql-885217.user-victorjean",
+                port="5432",
+            )
+        except Exception as e:
+            print(f"Error connecting to the database: {e}")
+            exit()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id,            "
+                "       username,      "
+                "       email,         "
+                "       password_hash  "
+                "FROM users            "
+            )
+            users_db = cur.fetchall()
+            return users_db
 
     def get_by_id(self, id):
         """
@@ -90,109 +110,81 @@ class UserDao(AbstractDao):
         """
         if self.exist(id):
             try:
-                cursor = self.conn.cursor(cursor_factory=RealDictCursor)
-                sql_query = """
-                SELECT * FROM users WHERE id = %s LIMIT 1;
-                """
-                param = (id,)
-                cursor.execute(sql_query, param)
-                row = cursor.fetchone()
-                return row
-            finally:
-                if cursor:
-                    cursor.close()
+                conn = psycopg2.connect(
+                    dbname="defaultdb",
+                    user="user-victorjean",
+                    password="pr9yh1516s57jjnmw7ll",
+                    host="postgresql-885217.user-victorjean",
+                    port="5432",
+                )
+            except Exception as e:
+                print(f"Error connecting to the database: {e}")
+                exit()
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(
+                    "SELECT id,              "
+                    "       username,        "
+                    "       email,           "
+                    "       password_hash,   "
+                    "FROM users              "
+                    "WHERE id = %s           ",
+                    (id,)
+                )
+                user = cursor.fetchone()
+            conn.close()
+            return user
 
-    def update(self, id, *args, **kwargs):
-        pass
+    def update(self, id, username=None, email=None, password_hash=None):
+        """
+        Update the users database.
+
+        Args:
+
+        Returns:
+            user (dict): the updated user
+        """
+        if self.exist(id):
+            updates = []
+            params = []
+            if username is not None:
+                updates.append(sql.SQL("username = %s"))
+                params.append(username)
+            if email is not None:
+                updates.append(sql.SQL("email = %s"))
+                params.append(email)
+            if password_hash is not None:
+                updates.append(sql.SQL("password_hash = %s"))
+                params.append(password_hash)
+            if not updates:
+                raise ValueError("At least one field to update must be provided")
+            params.append(id)
+            query = sql.SQL("""
+                UPDATE users
+                SET {set_clause}
+                WHERE user_id = %s
+                RETURNING user_id,
+                          username,
+                          email,
+                          password_hash
+            """).format(set_clause=sql.SQL(", ").join(updates))
+
+            conn = None
+            try:
+                conn = psycopg2.connect(
+                    dbname="defaultdb",
+                    user="user-victorjean",
+                    password="pr9yh1516s57jjnmw7ll",
+                    host="postgresql-885217.user-victorjean",
+                    port="5432",
+                )
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute(query, params)
+                    row = cur.fetchone()
+                    conn.commit()
+                    return row
+            finally:
+                if conn:
+                    conn.close()
 
     def delete(self, entity_id):
         pass
-
-    def getUsername(self, user_id):
-        """
-        Get the username by user ID.
-
-        Args:
-            user_id (int): The ID of the user.
-
-        Returns:
-            username (str)
-
-        Raises:
-            ValueError: If the provided `user_id` is not a positive integer.
-            psycopg2.Error: If a database error occurs during the query execution.
-        """
-        if self.exist(id):
-            try:
-                query = sql.SQL("SELECT username FROM users WHERE id = %s;")
-                self.cursor.execute(query, (user_id,))
-        
-            except psycopg2.Error as e:
-                # Log the error or handle it as needed
-                raise psycopg2.Error(
-                    f"Database error while fetching card with ID {user_id}: {e}"
-                )
-
-    def getEmail(self, user_id):
-        """
-        Get the email by user ID.
-
-        Args:
-            user_id (int): The ID of the user.
-
-        Returns:
-            username (str)
-
-        Raises:
-            ValueError: If the provided `user_id` is not a positive integer.
-            psycopg2.Error: If a database error occurs during the query execution.
-        """
-        if self.exist(id):
-            try:
-                query = sql.SQL("SELECT email FROM users WHERE id = %s;")
-                self.cursor.execute(query, (user_id,))
-            
-            except psycopg2.Error as e:
-                # Log the error or handle it as needed
-                raise psycopg2.Error(
-                    f"Database error while fetching card with ID {user_id}: {e}"
-                )
-                
-    def signUp(self, username, email, password_hash):
-        """
-        Insert a new user into the database.
-        
-        Args:
-            username (str): chosen username
-            email (str): user email
-            password_hash (str): hashed password (never store raw password!)
-        
-        Returns:
-            int: the id of the newly created user
-        """
-        query = sql.SQL("""
-            INSERT INTO users (username, email, password_hash)
-            VALUES (%s, %s, %s)
-            RETURNING id;
-        """)
-
-        with self.conn.cursor() as cur:
-            cur.execute(query, (username, email, password_hash))
-            user_id = cur.fetchone()[0]
-        
-        self.conn.commit()
-        return user_id
-
-    def signIn():
-        """
-        Connect a user on its account.
-        
-        Args:
-            username (str): chosen username
-            password_hash (str): hashed password (never store raw password!)
-        
-        Returns:
-            int: the id of the user
-        """
-
-   

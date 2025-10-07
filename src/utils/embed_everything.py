@@ -2,8 +2,10 @@ from dao.cardDao import CardDao
 from business_object.cardBusiness import CardBusiness
 from dotenv import load_dotenv
 import os
+import time
 
-def process_all_cards(max_card_id=4):
+
+def process_all_cards(max_card_id=32548):
     load_dotenv()
     api_key = os.getenv("LLM_API_KEY")
     endpoint_url = "https://llm.lab.sspcloud.fr/ollama/api/embed"
@@ -15,8 +17,10 @@ def process_all_cards(max_card_id=4):
                 business.generate_text_to_embed2()
                 business.vectorize(business.text_to_embed, endpoint_url, api_key)
                 print(f"Processed card {card_id}: embedding generated.")
+                time.sleep(1)
             except ValueError as e:
                 print(f"Error processing card {card_id}: {e}")
+
 
 if __name__ == "__main__":
     process_all_cards()

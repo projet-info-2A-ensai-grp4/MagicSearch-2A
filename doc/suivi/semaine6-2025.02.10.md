@@ -1,9 +1,9 @@
 # Point Hebdomadaire - Projet
-**Date :** Jeudi 09 octobre 2025
-**Semaine n° 7**
+**Date :** Jeudi 02 octobre 2025
+**Semaine n° 6**
 
 > *Vous indiquerez également le temps estimé à travailler sur le projet du vendredi 0h au jeudi 23h59.*
-temps de travail estimé : 0h (partiels!)
+temps de travail estimé : 4h
 
 ## Tâches réalisées cette semaine
 **This week, the all group worked on the report, because it is very important!**
@@ -13,15 +13,13 @@ Tanguy Ajas
 
 ### Nom Prénom élève 2
 Alexandre Gasowski
-- ras
-- [ ] création de la classe userDao et des ses méthodes, héritée de AbstractDao
-- [ ] tests sur la classe userDao
+- [x] création de la classe userDao et des ses méthodes, héritée de AbstractDao
+- [x] tests sur la classe userDao
 - [ ] création d'une classe DBConnection
 
 ### Nom Prénom élève 3
 Victor Jean
 - [ ] implement search function in user class (unfinished)
-- [x] ras
 
 ### Nom Prénom élève 4
 Lina Louati
@@ -30,7 +28,8 @@ Lina Louati
 
 ### Nom Prénom élève 5
 Charles Ozeel
-- ras
+- [x] Creation of daoUsers
+- [x] Add fixture into the test_dao.py file
 - [ ] add CRUD methods to AbstractDao.py file,
 - [ ] Find each filter method we can add
 ## Backlog

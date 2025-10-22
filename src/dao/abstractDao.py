@@ -5,7 +5,8 @@ import psycopg2
 class AbstractDao(ABC):
     def __init__(self):
         self.conn_params = {
-            # not a problem bc the postgres is only availabe through local network
+            # not a problem bc the postgres is only availabe through local
+            # network
             "host": "postgresql-885217.user-victorjean",
             "port": 5432,
             "database": "defaultdb",
@@ -45,5 +46,5 @@ class AbstractDao(ABC):
         pass
 
     @abstractmethod
-    def delete(self, entity_id):
+    def delete(self, id):
         pass

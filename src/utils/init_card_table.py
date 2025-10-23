@@ -1,6 +1,6 @@
 import json
 from psycopg2.extras import execute_values
-from db_connection import dbConnection
+from dbConnection import dbConnection
 
 # --- Load JSON file ---
 with open("/home/onyxia/work/MagicSearch-2A/data/AtomicCards.json", "r") as file:

@@ -1,3 +1,9 @@
+# export DB_HOST=postgresql-885217.user-victorjean
+# export DB_PORT=5432
+# export DB_NAME=defaultdb
+# export DB_USER=user-victorjean
+# export DB_PASSWORD=pr9yh1516s57jjnmw7ll
+
 import os
 import psycopg2
 from dotenv import load_dotenv
@@ -23,7 +29,6 @@ class dbConnection:
                 database=os.environ["DB_NAME"],
                 user=os.environ["DB_USER"],
                 password=os.environ["DB_PASSWORD"],
-                sslmode="require",
             )
 
             return self.conn  # retourne la connexion pour utilisation

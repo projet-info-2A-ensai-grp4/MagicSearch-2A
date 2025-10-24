@@ -1,4 +1,4 @@
-# export PYTHONPATH=/Users/charles.ozeel/Desktop/MagicSearch-2A/src
+# export PYTHONPATH=~/work/MagicSearch-2A/src
 # export DB_HOST=postgresql-885217.user-victorjean
 # export DB_PORT=5432
 # export DB_NAME=defaultdb

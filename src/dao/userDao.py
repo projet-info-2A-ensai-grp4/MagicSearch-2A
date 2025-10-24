@@ -5,7 +5,6 @@ from utils.dbConnection import dbConnection
 
 
 class UserDao(AbstractDao):
-
     def exist(self, id):
         """
         Verify if an id is correct and exists in the database.

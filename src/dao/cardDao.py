@@ -1,19 +1,18 @@
-#export PYTHONPATH=/Users/charles.ozeel/Desktop/MagicSearch-2A/src
-#export DB_HOST=postgresql-885217.user-victorjean
-#export DB_PORT=5432
-#export DB_NAME=defaultdb
-#export DB_USER=user-victorjean
-#export DB_PASSWORD=pr9yh1516s57jjnmw7ll
+# export PYTHONPATH=/Users/charles.ozeel/Desktop/MagicSearch-2A/src
+# export DB_HOST=postgresql-885217.user-victorjean
+# export DB_PORT=5432
+# export DB_NAME=defaultdb
+# export DB_USER=user-victorjean
+# export DB_PASSWORD=pr9yh1516s57jjnmw7ll
 
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 from .abstractDao import AbstractDao
-from ..utils.dbConnection import dbConnection
+from utils.dbConnection import dbConnection
 
 
 class CardDao(AbstractDao):
-
     columns_valid = {
         "id",
         "card_key",

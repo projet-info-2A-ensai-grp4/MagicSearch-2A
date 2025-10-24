@@ -72,8 +72,11 @@ def mock_card_dao():
         # fetchone side effect
         def fetchone_side_effect(*args, **kwargs):
             last_query = mock_cursor.execute.call_args[0][0]
-            params = mock_cursor.execute.call_args[0][1] if len(
-                mock_cursor.execute.call_args[0]) > 1 else None
+            params = (
+                mock_cursor.execute.call_args[0][1]
+                if len(mock_cursor.execute.call_args[0]) > 1
+                else None
+            )
             sql = last_query.strip().upper()
 
             # --- COUNT ---
@@ -101,7 +104,10 @@ def mock_card_dao():
                 card_id = params[-1]
                 if card_id in fake_db:
                     set_part = sql.split("SET")[1].split("WHERE")[0]
-                    cols = [part.split("=")[0].strip().lower() for part in set_part.split(",")]
+                    cols = [
+                        part.split("=")[0].strip().lower()
+                        for part in set_part.split(",")
+                    ]
                     for i, col in enumerate(cols):
                         if i < len(params) - 1:
                             fake_db[card_id][col] = params[i]
@@ -130,7 +136,7 @@ def test_shape(mock_card_dao):
 
 
 def test_exist(mock_card_dao):
-    """Tests if a card exists with its id """
+    """Tests if a card exists with its id"""
     dao, cursor, fake_db = mock_card_dao
     result_True = dao.exist(420)
     result_False = dao.exist(999)
@@ -180,7 +186,7 @@ def test_create(mock_card_dao):
 
 
 def test_update(mock_card_dao):
-    """ Test updating a card, with Id and items who should be change """
+    """Test updating a card, with Id and items who should be change"""
     dao, cursor, fake_db = mock_card_dao
     updated_card = dao.update(420, name="Updated Card")
     assert updated_card["id"] == 420

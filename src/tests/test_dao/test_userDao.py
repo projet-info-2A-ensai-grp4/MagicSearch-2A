@@ -70,11 +70,7 @@ def mock_user_dao():
             return
 
         # SELECT id, username, ... FROM users WHERE id = %s (get_by_id)
-        if (
-            q.startswith("select")
-            and "from users" in q
-            and "where id = %s" in q
-        ):
+        if q.startswith("select") and "from users" in q and "where id = %s" in q:
             id = params[0]
             row = fake_users_db.get(id)
             mock_cursor.fetchone.return_value = row
@@ -160,9 +156,7 @@ def test_exist_valueerror(mock_user_dao):
 def test_create_ok(mock_user_dao):
     dao, _, mock_conn, _, fake_db = mock_user_dao
     user = dao.create("hermione", "hermion@hogwarts.com", "hash2")
-    assert (
-        user["id"] in fake_db and fake_db[user["id"]]["username"] == "hermione"
-    )
+    assert user["id"] in fake_db and fake_db[user["id"]]["username"] == "hermione"
     mock_conn.commit.assert_called_once()
 
 

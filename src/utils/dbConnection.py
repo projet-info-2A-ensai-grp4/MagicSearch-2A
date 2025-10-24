@@ -23,7 +23,7 @@ class dbConnection:
                 database=os.environ["DB_NAME"],
                 user=os.environ["DB_USER"],
                 password=os.environ["DB_PASSWORD"],
-                sslmode="require"
+                sslmode="require",
             )
 
             return self.conn  # retourne la connexion pour utilisation

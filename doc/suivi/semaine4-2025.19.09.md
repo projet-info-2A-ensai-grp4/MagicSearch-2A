@@ -6,6 +6,7 @@
 temps de travail estimé : 4h
 
 ## Tâches réalisées cette semaine
+**This week, the all group worked on the report, because it is very important!**
 ### Nom Prénom élève 1
 Tanguy Ajas
 - [x] Faire le diagramme de la base de données (db_diagram.md)
@@ -20,21 +21,30 @@ Alexandre Gasowski
 
 ### Nom Prénom élève 3
 Victor Jean
-- [x] Trouver un index > scryfallId
+- [x] Find an index > scryfallId
 - [x] Ruff Github Action
+- [x] cardDAO methods and tests of the methods
+- [x] cardBusiness methods and tests of the methods
+- [x] edit_embedding dans cardBusiness
+- [x] new class diagram 
 
 ### Nom Prénom élève 4
 Lina Louati
-- ras
+- [x] edit_embedding dans cardBusiness
+- [x] first version of generate_text_to_embed in cardBusiness
 
 ### Nom Prénom élève 5
 Charles Ozeel
-- ras
+- [x] Test du vector embedding sur un corpus de sms en free access (url : https://www.kaggle.com/datasets/uciml/sms-spam-collection-dataset).
+- [x] Penser à réflechir aux commandes SQL utiles pour la DAO (filtrage classique, création, délétion de cartes, Modification de carte, add, delete users)
+- [x] Dans le filtrage, On doit filtrer par: type, nom, mana, text, dégât 
+
 ---
 ## Backlog
 > Liste des tâches en attente de prise en charge.
 ### Prioritaires
 *Toujours penser à faire des units tests !!*
+- [x] Faire le premier rapport ⚠️
 - [x] Diagramme BDD (_Tanguy et Victor_)
 - [x] Brainstorming fonctionnalités sur la base de données
     - [x] Ajouter, supprimer, modifier des entrées
@@ -45,13 +55,14 @@ Charles Ozeel
 
 - [ ] FastAPI for searching
 - [ ] Recherche Sémantique
-    - [ ] CardDao class
+    - [x] CardDao class
     - [ ] CardBusiness class
     - [ ] etc.
 
 ### Secondaires
 - [ ] Récupérer les images des cartes (API Scryfall)
 - [ ] Moteur de recherche qui différencie logique (coût d'une carte) et semantic search
+- [ ] Interface graphique (à voir ce que l'on fait)
 
 ## Notes de fonctionnalités abandonné
 - Merge "card set" database and "atomic card" database (too hard because one data file per set, too much work for almost no more information).

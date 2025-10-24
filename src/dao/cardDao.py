@@ -81,12 +81,11 @@ class CardDao(AbstractDao):
                     """
                     cursor.execute(sql_query)
                     row = cursor.fetchone()
-                    return row.get('count'), len(self.columns_valid)
+                    return row.get("count"), len(self.columns_valid)
 
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
-        
 
     def exist(self, id):
         """
@@ -157,7 +156,6 @@ class CardDao(AbstractDao):
                 print(f"Error connecting to the database: {e}")
                 exit()
 
-
     def create(self, **kwargs):
         """
         Insert a new record into the `cards` table.
@@ -206,20 +204,20 @@ class CardDao(AbstractDao):
         }
         # Add None for the keys None - specified.
         try:
-             with dbConnection() as conn:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        columns = ", ".join(card_data.keys())
-                        placeholders = ", ".join(["%s"] * len(card_data))
-                        sql_query = f"""
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    columns = ", ".join(card_data.keys())
+                    placeholders = ", ".join(["%s"] * len(card_data))
+                    sql_query = f"""
                         INSERT INTO cards ({columns})
                         VALUES ({placeholders})
                         RETURNING *;
                         """
-                        params = tuple(card_data.values())
-                        cursor.execute(sql_query, params)
-                        conn.commit()
-                        new_card = cursor.fetchone()
-                        return new_card
+                    params = tuple(card_data.values())
+                    cursor.execute(sql_query, params)
+                    conn.commit()
+                    new_card = cursor.fetchone()
+                    return new_card
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()

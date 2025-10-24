@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from .abstractDao import AbstractDao
+from utils.dbConnection import dbConnection
 
 
 class UserDao(AbstractDao):
@@ -36,30 +37,21 @@ class UserDao(AbstractDao):
             raise ValueError("The user id must be positive")
         conn = None
         try:
-            conn = psycopg2.connect(
-                dbname="defaultdb",
-                user="user-victorjean",
-                password="pr9yh1516s57jjnmw7ll",
-                host="postgresql-885217.user-victorjean",
-                port="5432",
-            )
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    "SELECT *          "
-                    "FROM users        "
-                    "WHERE id = %s     "
-                    "LIMIT 1           ",
-                    (id,),
-                )
-                user = cursor.fetchone()
-            return user is not None
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(
+                        "SELECT *          "
+                        "FROM users        "
+                        "WHERE id = %s     "
+                        "LIMIT 1           ",
+                        (id,),
+                    )
+                    user = cursor.fetchone()
+                return user is not None
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-        finally:
-            if conn:
-                conn.close()
 
     # CREATE
 
@@ -91,41 +83,30 @@ class UserDao(AbstractDao):
         """
         conn = None
         try:
-            conn = psycopg2.connect(
-                dbname="defaultdb",
-                user="user-victorjean",
-                password="pr9yh1516s57jjnmw7ll",
-                host="postgresql-885217.user-victorjean",
-                port="5432",
-            )
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    "INSERT INTO users (username,        "
-                    "                   email,           "
-                    "                   password_hash)   "
-                    "VALUES (%s, %s, %s)                 "
-                    "RETURNING id,                       "
-                    "          username,                 "
-                    "          email,                    "
-                    "          password_hash             ",
-                    (username, email, password_hash),
-                )
-                new_user = cursor.fetchone()
-                conn.commit()
-                return new_user
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(
+                        "INSERT INTO users (username,        "
+                        "                   email,           "
+                        "                   password_hash)   "
+                        "VALUES (%s, %s, %s)                 "
+                        "RETURNING id,                       "
+                        "          username,                 "
+                        "          email,                    "
+                        "          password_hash             ",
+                        (username, email, password_hash),
+                    )
+                    new_user = cursor.fetchone()
+                    conn.commit()
+                    return new_user
         except psycopg2.IntegrityError as e:
             if conn:
                 conn.rollback()
-            raise ValueError(
-                f"User with email '{email}' already exists."
-            ) from e
+            raise ValueError(f"User with email '{email}' already exists.") from e
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-        finally:
-            if conn:
-                conn.close()
 
     # READ
     def get_all(self):
@@ -147,31 +128,22 @@ class UserDao(AbstractDao):
         """
         conn = None
         try:
-            conn = psycopg2.connect(
-                dbname="defaultdb",
-                user="user-victorjean",
-                password="pr9yh1516s57jjnmw7ll",
-                host="postgresql-885217.user-victorjean",
-                port="5432",
-            )
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute(
-                    "SELECT id,              "
-                    "       username,        "
-                    "       email,           "
-                    "       password_hash    "
-                    "FROM users              "
-                    "ORDER BY id             "
-                )
-                users_db = cursor.fetchall()
-                return users_db
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(
+                        "SELECT id,              "
+                        "       username,        "
+                        "       email,           "
+                        "       password_hash    "
+                        "FROM users              "
+                        "ORDER BY id             "
+                    )
+                    users_db = cursor.fetchall()
+                    return users_db
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-        finally:
-            if conn:
-                conn.close()
 
     def get_by_id(self, id):
         """
@@ -204,34 +176,23 @@ class UserDao(AbstractDao):
         if self.exist(id):
             conn = None
             try:
-                conn = psycopg2.connect(
-                    dbname="defaultdb",
-                    user="user-victorjean",
-                    password="pr9yh1516s57jjnmw7ll",
-                    host="postgresql-885217.user-victorjean",
-                    port="5432",
-                )
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(
-                        "SELECT id,             "
-                        "       username,       "
-                        "       email,          "
-                        "       password_hash   "
-                        "FROM users             "
-                        "WHERE id = %s          ",
-                        (id,),
-                    )
-                    user = cursor.fetchone()
-                return user
+                with dbConnection() as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                        cursor.execute(
+                            "SELECT id,             "
+                            "       username,       "
+                            "       email,          "
+                            "       password_hash   "
+                            "FROM users             "
+                            "WHERE id = %s          ",
+                            (id,),
+                        )
+                        user = cursor.fetchone()
+                    return user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(
-                    f"Database connection failed: {e}"
-                ) from e
+                raise ConnectionError(f"Database connection failed: {e}") from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
-            finally:
-                if conn:
-                    conn.close()
 
     # UPDATE
     def update(self, id, username=None, email=None, password_hash=None):
@@ -279,9 +240,7 @@ class UserDao(AbstractDao):
                 updates.append("password_hash = %s")
                 params.append(password_hash)
             if not updates:
-                raise ValueError(
-                    "At least one field to update must be provided"
-                )
+                raise ValueError("At least one field to update must be provided")
             params.append(id)
             query = (
                 "UPDATE users               "
@@ -295,27 +254,16 @@ class UserDao(AbstractDao):
 
             conn = None
             try:
-                conn = psycopg2.connect(
-                    dbname="defaultdb",
-                    user="user-victorjean",
-                    password="pr9yh1516s57jjnmw7ll",
-                    host="postgresql-885217.user-victorjean",
-                    port="5432",
-                )
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(query, params)
-                    updated_user = cursor.fetchone()
-                    conn.commit()
-                    return updated_user
+                with dbConnection() as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                        cursor.execute(query, params)
+                        updated_user = cursor.fetchone()
+                        conn.commit()
+                        return updated_user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(
-                    f"Database connection failed: {e}"
-                ) from e
+                raise ConnectionError(f"Database connection failed: {e}") from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
-            finally:
-                if conn:
-                    conn.close()
 
     # DELETE
     def delete(self, id):
@@ -347,30 +295,22 @@ class UserDao(AbstractDao):
         if self.exist(id):
             conn = None
             try:
-                conn = psycopg2.connect(
-                    dbname="defaultdb",
-                    user="user-victorjean",
-                    password="pr9yh1516s57jjnmw7ll",
-                    host="postgresql-885217.user-victorjean",
-                    port="5432",
-                )
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(
-                        "DELETE FROM users         "
-                        "WHERE id = %s             "
-                        "RETURNING id,             "
-                        "          username,       "
-                        "          email,          "
-                        "          password_hash   ",
-                        (id,),
-                    )
-                    del_user = cursor.fetchone()
-                    conn.commit()
-                    return del_user
+                with dbConnection() as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                        cursor.execute(
+                            "DELETE FROM users         "
+                            "WHERE id = %s             "
+                            "RETURNING id,             "
+                            "          username,       "
+                            "          email,          "
+                            "          password_hash   ",
+                            (id,),
+                        )
+                        del_user = cursor.fetchone()
+                        conn.commit()
+                        return del_user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(
-                    f"Database connection failed: {e}"
-                ) from e
+                raise ConnectionError(f"Database connection failed: {e}") from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
             finally:

@@ -1,9 +1,9 @@
 # Point Hebdomadaire - Projet
-**Date :** Jeudi 16 octobre 2025
-**Semaine n° 8**
+**Date :** Jeudi 23 octobre 2025
+**Semaine n° 9**
 
 > *Vous indiquerez également le temps estimé à travailler sur le projet du vendredi 0h au jeudi 23h59.*
-temps de travail estimé : 3h
+temps de travail estimé : 5h
 
 ## Tâches réalisées cette semaine
 **This week, the all group worked on the report, because it is very important!**
@@ -13,13 +13,14 @@ Tanguy Ajas
 
 ### Nom Prénom élève 2
 Alexandre Gasowski
-- [x] classe userDao terminée
-- [x] 15 tests réalisée pour la classe userDao
+- ras
 
 ### Nom Prénom élève 3
 Victor Jean
-- [ ] implement search function in user class (unfinished)
-- [x] ras
+- [x] edited function
+- [x] global vectorize function (in a new service folder!)
+- [ ] implement search function in user class (finished but not finished bc still not working)
+
 
 ### Nom Prénom élève 4
 Lina Louati
@@ -31,6 +32,7 @@ Charles Ozeel
 - ras
 - [ ] add CRUD methods to AbstractDao.py file,
 - [ ] Find each filter method we can add
+
 ## Backlog
 > Liste des tâches en attente de prise en charge.
 ### Prioritaires

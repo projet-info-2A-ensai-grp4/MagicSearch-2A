@@ -1,4 +1,4 @@
-psycopg
+psycopg2
 requests
 pytest
 python-dotenv

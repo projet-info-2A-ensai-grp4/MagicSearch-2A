@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 from .abstractDao import AbstractDao
+from utils.dbConnection import dbConnection
 
 
 class CardDao(AbstractDao):
@@ -73,29 +74,19 @@ class CardDao(AbstractDao):
             error and exits the program.
         """
         try:
-            conn = psycopg2.connect(
-                dbname="defaultdb",
-                user="user-victorjean",
-                password="pr9yh1516s57jjnmw7ll",
-                host="postgresql-885217.user-victorjean",
-                port="5432",
-            )
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    sql_query = """
+                    SELECT count(*) FROM cards;
+                    """
+                    cursor.execute(sql_query)
+                    row = cursor.fetchone()
+                    return row.get('count'), len(self.columns_valid)
+
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
-        try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            sql_query = """
-            SELECT count(*) FROM cards;
-            """
-            cursor.execute(sql_query)
-            row = cursor.fetchone()
-            return row.get('count'), len(self.columns_valid)
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close
+        
 
     def exist(self, id):
         """
@@ -123,30 +114,19 @@ class CardDao(AbstractDao):
         if id < 0:
             raise ValueError("Card ID must be a positive integer")
         try:
-            conn = psycopg2.connect(
-                dbname="defaultdb",
-                user="user-victorjean",
-                password="pr9yh1516s57jjnmw7ll",
-                host="postgresql-885217.user-victorjean",
-                port="5432",
-            )
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    sql_query = """
+                    SELECT * FROM cards WHERE id = %s LIMIT 1;
+                    """
+                    param = (id,)
+                    cursor.execute(sql_query, param)
+                    row = cursor.fetchone()
+                    return row is not None
+
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
-        try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            sql_query = """
-            SELECT * FROM cards WHERE id = %s LIMIT 1;
-            """
-            param = (id,)
-            cursor.execute(sql_query, param)
-            row = cursor.fetchone()
-            return row is not None
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close
 
     def get_by_id(self, id):
         """Fetch a card by its ID and return it as a dictionary.
@@ -164,30 +144,19 @@ class CardDao(AbstractDao):
         """
         if self.exist(id):
             try:
-                conn = psycopg2.connect(
-                    dbname="defaultdb",
-                    user="user-victorjean",
-                    password="pr9yh1516s57jjnmw7ll",
-                    host="postgresql-885217.user-victorjean",
-                    port="5432",
-                )
+                with dbConnection() as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                        sql_query = """
+                        SELECT * FROM cards WHERE id = %s LIMIT 1;
+                        """
+                        param = (id,)
+                        cursor.execute(sql_query, param)
+                        row = cursor.fetchone()
+                        return row
             except Exception as e:
                 print(f"Error connecting to the database: {e}")
                 exit()
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                sql_query = """
-                SELECT * FROM cards WHERE id = %s LIMIT 1;
-                """
-                param = (id,)
-                cursor.execute(sql_query, param)
-                row = cursor.fetchone()
-                return row
-            finally:
-                if cursor:
-                    cursor.close()
-                if conn:
-                    conn.close
+
 
     def create(self, **kwargs):
         """
@@ -237,35 +206,23 @@ class CardDao(AbstractDao):
         }
         # Add None for the keys None - specified.
         try:
-            conn = psycopg2.connect(
-                dbname="defaultdb",
-                user="user-victorjean",
-                password="pr9yh1516s57jjnmw7ll",
-                host="postgresql-885217.user-victorjean",
-                port="5432",
-            )
+             with dbConnection() as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                        columns = ", ".join(card_data.keys())
+                        placeholders = ", ".join(["%s"] * len(card_data))
+                        sql_query = f"""
+                        INSERT INTO cards ({columns})
+                        VALUES ({placeholders})
+                        RETURNING *;
+                        """
+                        params = tuple(card_data.values())
+                        cursor.execute(sql_query, params)
+                        conn.commit()
+                        new_card = cursor.fetchone()
+                        return new_card
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
-        try:
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            columns = ", ".join(card_data.keys())
-            placeholders = ", ".join(["%s"] * len(card_data))
-            sql_query = f"""
-            INSERT INTO cards ({columns})
-            VALUES ({placeholders})
-            RETURNING *;
-            """
-            params = tuple(card_data.values())
-            cursor.execute(sql_query, params)
-            conn.commit()
-            new_card = cursor.fetchone()
-            return new_card
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close
 
     def update(self, id, *args, **kwargs):
         """
@@ -310,66 +267,69 @@ class CardDao(AbstractDao):
             columns = list(kwargs.keys())
             values = list(kwargs.values())
             try:
-                conn = psycopg2.connect(
-                    dbname="defaultdb",
-                    user="user-victorjean",
-                    password="pr9yh1516s57jjnmw7ll",
-                    host="postgresql-885217.user-victorjean",
-                    port="5432",
-                )
+                with dbConnection() as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                        set_clause = ", ".join([f"{col} = %s" for col in columns])
+                        sql_query = f"""
+                            UPDATE cards
+                            SET {set_clause}
+                            WHERE id = %s
+                            RETURNING *;
+                        """
+                        params = (*values, id)
+                        cursor.execute(sql_query, params)
+                        conn.commit()
+                        updated_card = cursor.fetchone()
+                        return updated_card
             except Exception as e:
                 print(f"Error connecting to the database: {e}")
                 exit()
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                set_clause = ", ".join([f"{col} = %s" for col in columns])
-                sql_query = f"""
-                    UPDATE cards
-                    SET {set_clause}
-                    WHERE id = %s
-                    RETURNING *;
-                """
-                params = (*values, id)
-                cursor.execute(sql_query, params)
-                conn.commit()
-                updated_card = cursor.fetchone()
-                return updated_card
-            finally:
-                if cursor:
-                    cursor.close()
-                if conn:
-                    conn.close
 
     def delete(self, id):
+        """
+        Delete a card from the database by its ID.
+
+        This method checks if a card with the given ID exists using `self.exist(id)`.
+        If it exists, it deletes the card from the `cards` table and returns the deleted row.
+        Uses a context manager (`dbConnection`) to safely handle the database connection
+        and cursor. Commits the transaction after deletion.
+
+        Parameters:
+            id (int): The ID of the card to delete. Must be a positive integer.
+
+        Returns:
+            dict: The deleted row as a dictionary if the deletion was successful.
+            None: If the card does not exist.
+
+        Raises:
+            TypeError: If `id` is not an integer.
+            ValueError: If `id` is a negative integer.
+            Exception: If there is an error connecting to the database or executing the query.
+
+        Example:
+            deleted_card = obj.delete(42)
+            if deleted_card:
+                print("Card deleted:", deleted_card)
+            else:
+                print("Card not found.")
+        """
         if self.exist(id):
             try:
-                conn = psycopg2.connect(
-                    dbname="defaultdb",
-                    user="user-victorjean",
-                    password="pr9yh1516s57jjnmw7ll",
-                    host="postgresql-885217.user-victorjean",
-                    port="5432",
-                )
+                with dbConnection() as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                        sql_query = """
+                        DELETE FROM cards
+                        WHERE id = %s
+                        RETURNING *;
+                        """
+                        param = (id,)
+                        cursor.execute(sql_query, param)
+                        row = cursor.fetchone()
+                        conn.commit()
+                        return row
             except Exception as e:
                 print(f"Error connecting to the database: {e}")
                 exit()
-            try:
-                cursor = conn.cursor(cursor_factory=RealDictCursor)
-                sql_query = """
-                DELETE FROM cards
-                WHERE id = %s
-                RETURNING *;
-                """
-                param = (id,)
-                cursor.execute(sql_query, param)
-                row = cursor.fetchone()
-                conn.commit()
-                return row
-            finally:
-                if cursor:
-                    cursor.close()
-                if conn:
-                    conn.close
 
     def edit_text_to_embed(self, embed_me, card_id):
         """Edit the text_to_embed value of a card.

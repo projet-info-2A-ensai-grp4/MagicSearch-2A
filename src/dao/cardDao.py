@@ -1,8 +1,8 @@
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
-from abstractDao import AbstractDao
-from utils.dbConnection import dbConnection
+from .abstractDao import AbstractDao
+from ..utils.dbConnection import dbConnection
 
 
 class CardDao(AbstractDao):

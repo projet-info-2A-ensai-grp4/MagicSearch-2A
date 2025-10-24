@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
-from .abstractDao import AbstractDao
+from abstractDao import AbstractDao
 from utils.dbConnection import dbConnection
 
 
@@ -376,6 +376,92 @@ class CardDao(AbstractDao):
             raise psycopg2.Error(
                 f"Database error while updating text_to_embed for card ID {card_id}: {str(e)}"
             )
+
+    def filter(
+        self,
+        order_by: str,
+        asc: bool = True,
+        limit: int = 100,
+        offset: int = 0,
+        **kwargs,
+    ):
+        """
+        Retrieves cards from the database using dynamic filters.
+
+        This method builds a SQL SELECT query on the `cards` table with:
+        - Dynamic filters passed via **kwargs
+        - Optional sorting (ORDER BY)
+        - Pagination (LIMIT / OFFSET)
+
+        Parameters:
+        -----------
+        order_by : str, optional
+            The column name to sort the results by. Must be in `self.columns_valid`.
+        asc : bool, optional, default=True
+            Sorting direction: True for ascending (ASC), False for descending (DESC).
+        limit : int, optional, default=100
+            Maximum number of results to return.
+        offset : int, optional, default=0
+            Offset for pagination.
+        **kwargs : dict
+            Dynamic column filters, where each key is a column name and the value is the filter:
+            - Single value → filters as `col = value`
+            - List or tuple → filters as `col IN (value1, value2, ...)`
+            - None → filter evaluates as FALSE (returns no results)
+
+        Behavior:
+        ---------
+        1. Validates that all filter keys are in `self.columns_valid`.
+        2. Validates that `order_by` is valid if provided.
+        3. Builds the WHERE clause dynamically:
+        - `col = %s` for scalar values
+        - `col IN (%s, %s, ...)` for lists/tuples
+        - `FALSE` for None values
+        4. Adds ORDER BY if requested.
+        5. Adds LIMIT and OFFSET for pagination.
+        6. Executes the query using placeholders `%s` to prevent SQL injection.
+        7. Returns results as a list of dictionaries (RealDictCursor).
+
+        Returns:
+        --------
+        list[dict]
+            List of dictionaries representing the cards retrieved from the `cards` table.
+        """
+        if not (set(kwargs.keys()).issubset(self.columns_valid)):
+            raise ValueError(
+                f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
+            )
+        if not (order_by in self.columns_valid):
+            raise ValueError(f"Invalid order_by: {order_by}")
+        try:
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    base_query = "SELECT * FROM cards WHERE TRUE"
+                    params = []
+                    filters = []
+                    for col, vals in kwargs.items():
+                        if vals is not None:
+                            if isinstance(vals, (list, tuple)):
+                                placeholders = ",".join(["%s"] * len(vals))
+                                filters.append(f"{col} IN ({placeholders})")
+                                params.extend(vals)
+                            else:
+                                filters.append(f"{col} = %s")
+                                params.append(vals)
+                        else:
+                            filters.append("FALSE")
+                    if filters:
+                        base_query += " AND " + " AND ".join(filters)
+                    if order_by:
+                        direction = "ASC" if asc else "DESC"
+                        base_query += f" ORDER BY {order_by} {direction}"
+                    base_query += " LIMIT %s OFFSET %s"
+                    params.extend([limit, offset])
+                    cursor.execute(base_query, params)
+                    return cursor.fetchall()
+        except Exception as e:
+            print(f"Error connecting to the database: {e}")
+            exit()
 
     def faceted_search():
         """Allow multi-filter search across facets like type, set, color"""

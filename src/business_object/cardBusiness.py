@@ -11,7 +11,7 @@ class CardBusiness:
         self.dao = dao
         self.embedding_service = embedding_service or EmbeddingService()
         with dao:
-            card_data = dao.get_card_by_id(card_id)
+            card_data = dao.get_by_id(card_id)
             if card_data is None:
                 raise ValueError(f"Card with ID {card_id} does not exist.")
             # Map card_data to instance attributes
@@ -83,7 +83,7 @@ class CardBusiness:
 
 if __name__ == "__main__":
     with CardDao() as dao:
-        print(dao.get_card_by_id(421))
+        print(dao.get_by_id(421))
 
         try:
             business = CardBusiness(dao, 421)

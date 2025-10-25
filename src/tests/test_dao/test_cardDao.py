@@ -67,7 +67,7 @@ def mock_card_dao():
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
-        # ✅ Correction : make `with conn.cursor() as cur:` work
+        # make "with conn.cursor() as cur:" work
         mock_cursor.__enter__.return_value = mock_cursor
         mock_cursor.__exit__.return_value = None
         mock_cursor.execute.return_value = None
@@ -267,6 +267,27 @@ def test_edit_vector(card_dao):
     )
 
 
+def test_filter_with_valid_kwargs(mock_card_dao):
+    dao, mock_cursor, fake_db = mock_card_dao
+
+    fake_db[421] = fake_db[420].copy()
+    fake_db[421]["id"] = 421
+    fake_db[421]["name"] = "Other Card"
+    fake_db[421]["type"] = "Artifact"
+
+    expected_rows = [fake_db[420]]
+    mock_cursor.fetchall.return_value = expected_rows
+    results = dao.filter(order_by="id", type="Creature")
+    query, params = mock_cursor.execute.call_args[0]
+    assert "SELECT * FROM cards" in query
+    assert "WHERE TRUE AND type = %s" in query
+    assert "ORDER BY id ASC" in query
+    assert "LIMIT %s OFFSET %s" in query
+    assert params[:-2] == ["Creature"]
+    assert params[-2:] == [100, 0]
+    assert results == expected_rows
+
+
 def test_get_card_by_id_invalid_input(card_dao):
     """Test fetching a card by an invalid ID."""
     invalid_card_id = -1
@@ -288,3 +309,4 @@ def test_edit_vector_invalid_input(card_dao):
     invalid_card_id = -1
     with pytest.raises(ValueError, match="card_id must be a positive integer"):
         card_dao.edit_vector(test_vector, invalid_card_id)
+

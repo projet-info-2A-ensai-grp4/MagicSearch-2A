@@ -137,6 +137,7 @@ def mock_card_dao():
 # Tests
 # -----------------------
 
+
 def test_shape(mock_card_dao):
     dao, cursor, fake_db = mock_card_dao
     row_count, col_count = dao.shape()
@@ -205,6 +206,27 @@ def test_delete(mock_card_dao):
     cursor.execute.assert_called()
 
 
+def test_filter_with_valid_kwargs(mock_card_dao):
+    dao, mock_cursor, fake_db = mock_card_dao
+
+    fake_db[421] = fake_db[420].copy()
+    fake_db[421]["id"] = 421
+    fake_db[421]["name"] = "Other Card"
+    fake_db[421]["type"] = "Artifact"
+
+    expected_rows = [fake_db[420]]
+    mock_cursor.fetchall.return_value = expected_rows
+    results = dao.filter(order_by="id", type="Creature")
+    query, params = mock_cursor.execute.call_args[0]
+    assert "SELECT * FROM cards" in query
+    assert "WHERE TRUE AND type = %s" in query
+    assert "ORDER BY id ASC" in query
+    assert "LIMIT %s OFFSET %s" in query
+    assert params[:-2] == ["Creature"]
+    assert params[-2:] == [100, 0]
+    assert results == expected_rows
+
+
 def test_get_card_by_id_nonexistent(card_dao):
     """Test fetching a card by a non-existent ID."""
     nonexistent_card_id = 99999
@@ -224,9 +246,9 @@ def test_edit_text_to_embed(card_dao):
     # Verify the update
     updated_card = card_dao.get_card_by_id(test_card_id)
     assert updated_card is not None, "Card not found after update"
-    assert updated_card["text_to_embed"] == test_text, (
-        "text_to_embed was not updated correctly"
-    )
+    assert (
+        updated_card["text_to_embed"] == test_text
+    ), "text_to_embed was not updated correctly"
 
 
 def test_edit_text_to_embed_nonexistent(card_dao):
@@ -262,30 +284,9 @@ def test_edit_vector(card_dao):
     # Verify the update
     updated_card = card_dao.get_card_by_id(test_card_id)
     assert updated_card is not None, "Card not found after update"
-    assert updated_card["embedding"] == test_vector, (
-        "embedding value was not updated correctly"
-    )
-
-
-def test_filter_with_valid_kwargs(mock_card_dao):
-    dao, mock_cursor, fake_db = mock_card_dao
-
-    fake_db[421] = fake_db[420].copy()
-    fake_db[421]["id"] = 421
-    fake_db[421]["name"] = "Other Card"
-    fake_db[421]["type"] = "Artifact"
-
-    expected_rows = [fake_db[420]]
-    mock_cursor.fetchall.return_value = expected_rows
-    results = dao.filter(order_by="id", type="Creature")
-    query, params = mock_cursor.execute.call_args[0]
-    assert "SELECT * FROM cards" in query
-    assert "WHERE TRUE AND type = %s" in query
-    assert "ORDER BY id ASC" in query
-    assert "LIMIT %s OFFSET %s" in query
-    assert params[:-2] == ["Creature"]
-    assert params[-2:] == [100, 0]
-    assert results == expected_rows
+    assert (
+        updated_card["embedding"] == test_vector
+    ), "embedding value was not updated correctly"
 
 
 def test_get_card_by_id_invalid_input(card_dao):
@@ -309,4 +310,3 @@ def test_edit_vector_invalid_input(card_dao):
     invalid_card_id = -1
     with pytest.raises(ValueError, match="card_id must be a positive integer"):
         card_dao.edit_vector(test_vector, invalid_card_id)
-

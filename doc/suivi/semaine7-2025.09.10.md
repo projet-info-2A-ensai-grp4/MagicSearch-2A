@@ -9,9 +9,7 @@ temps de travail estimé : 0h (partiels!)
 **This week, the all group worked on the report, because it is very important!**
 ### Nom Prénom élève 1
 Tanguy Ajas
-- implemented dbConnection class
-- adapted tables creation scripts to use this dbConnection class
-- started frontend
+- ras
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

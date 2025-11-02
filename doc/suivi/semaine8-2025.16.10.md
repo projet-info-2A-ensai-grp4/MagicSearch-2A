@@ -9,7 +9,8 @@ temps de travail estimé : 3h
 **This week, the all group worked on the report, because it is very important!**
 ### Nom Prénom élève 1
 Tanguy Ajas
-- ras
+- [x] dbConnection 
+- [x] adapt init_card_table and init_other_table using dbConnection
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

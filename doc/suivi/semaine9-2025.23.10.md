@@ -9,7 +9,7 @@ temps de travail estimé : 5h
 **This week, the all group worked on the report, because it is very important!**
 ### Nom Prénom élève 1
 Tanguy Ajas
-- ras
+- starting frontend : index + login + register (not yet working registration forms)
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

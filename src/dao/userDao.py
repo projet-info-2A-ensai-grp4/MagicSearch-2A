@@ -35,7 +35,7 @@ class UserDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT *          "
+                    "SELECT id         "
                     "FROM users        "
                     "WHERE id = %s     "
                     "LIMIT 1           ",
@@ -67,7 +67,7 @@ class UserDao(AbstractDao):
         --------
         new_user: dict
             Dictionary containing the newly created user's information, such as
-            'id', 'username', 'email' and 'password_hash'.
+            'id', 'username', 'email', 'password_hash' and 'role'.
 
         Raises:
         -------
@@ -91,6 +91,7 @@ class UserDao(AbstractDao):
                 )
                 new_user = self.cursor.fetchone()
                 self.conn.commit()
+                new_user["role"] = "player"
                 return new_user
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
@@ -106,7 +107,7 @@ class UserDao(AbstractDao):
         --------
         users_db: list
             The list of dictionaries containing the users's information, such
-            as 'id', 'username', 'email' and 'password_hash'.
+            as 'id', 'username', 'email', 'password_hash' and 'role.
 
         Raises:
         -------
@@ -121,7 +122,8 @@ class UserDao(AbstractDao):
                     "SELECT id,              "
                     "       username,        "
                     "       email,           "
-                    "       password_hash    "
+                    "       password_hash,   "
+                    "       role             "
                     "FROM users              "
                     "ORDER BY id             "
                 )
@@ -145,8 +147,8 @@ class UserDao(AbstractDao):
         --------
         user : dict or None
             - Dictionary containing the newly created user's information, such
-              as 'id', 'username', 'email' and 'password_hash', if the user
-              exists.
+              as 'id', 'username', 'email', 'password_hash' and 'role, if the
+              user exists.
             - None if no user with the given id exists in the database.
 
         Raises:
@@ -167,7 +169,8 @@ class UserDao(AbstractDao):
                         "SELECT id,             "
                         "       username,       "
                         "       email,          "
-                        "       password_hash   "
+                        "       password_hash,  "
+                        "       role            "
                         "FROM users             "
                         "WHERE id = %s          ",
                         (id,),
@@ -194,8 +197,8 @@ class UserDao(AbstractDao):
         --------
         user : dict or None
             - Dictionary containing the newly created user's information, such
-              as 'id', 'username', 'email' and 'password_hash', if the user
-              exists.
+              as 'id', 'username', 'email', 'password_hash' and 'role', if the
+              user exists.
             - None if no user with the given id exists in the database.
 
         Raises:
@@ -215,7 +218,8 @@ class UserDao(AbstractDao):
                     "SELECT id,             "
                     "       username,       "
                     "       email,          "
-                    "       password_hash   "
+                    "       password_hash,  "
+                    "       role            "
                     "FROM users             "
                     "WHERE username = %s    ",
                     (username,),
@@ -251,7 +255,7 @@ class UserDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT *              "
+                    "SELECT id             "
                     "FROM users            "
                     "WHERE email = %s      ",
                     (email),
@@ -285,7 +289,7 @@ class UserDao(AbstractDao):
         --------
         user : dict
             Dictionary containing the updated user's information, such as 'id',
-            'username', 'email' and 'password_hash'.
+            'username', 'email', 'password_hash' and 'role.
 
         Raises:
         -------
@@ -317,12 +321,13 @@ class UserDao(AbstractDao):
             params.append(id)
             query = (
                 "UPDATE users               "
-                f"SET {', '.join(updates)}   "
+                f"SET {', '.join(updates)}  "
                 "WHERE id = %s              "
                 "RETURNING id,              "
                 "          username,        "
                 "          email,           "
-                "          password_hash    "
+                "          password_hash,   "
+                "          role             "
             )
 
             try:
@@ -352,7 +357,7 @@ class UserDao(AbstractDao):
         --------
         user : dict
             Dictionary containing the deleted user's information, such as 'id',
-            'username', 'email' and 'password_hash'.
+            'username', 'email', 'password_hash' and 'role'.
 
         Raises:
         -------
@@ -375,7 +380,8 @@ class UserDao(AbstractDao):
                         "RETURNING id,             "
                         "          username,       "
                         "          email,          "
-                        "          password_hash   ",
+                        "          password_hash,  "
+                        "          role            ",
                         (id,),
                     )
                     del_user = self.cursor.fetchone()

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dbconnection import dbConnection
+from utils.dbConnection import dbConnection
 
 
 class AbstractDao(ABC):

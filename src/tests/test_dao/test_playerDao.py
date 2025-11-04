@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import psycopg2
 from dao.playerDao import PlayerDao
 
+
 @pytest.fixture
 def mock_player_db():
     with patch("dao.playerDao.dbConnection") as mock_db_conn, patch(

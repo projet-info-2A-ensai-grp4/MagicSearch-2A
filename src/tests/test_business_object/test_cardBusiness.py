@@ -234,8 +234,6 @@ def test_vectorize_success(mock_card_dao, requests_mock):
         business = CardBusiness(dao, 420)
         embedding = business.vectorize(
             business.text_to_embed,
-            "https://llm.lab.sspcloud.fr/ollama/api/embed",
-            api_key="test_api_key",
         )
 
     assert embedding == mock_embedding[0]
@@ -260,8 +258,6 @@ def test_vectorize_invalid_response(mock_card_dao, requests_mock):
         ):
             business.vectorize(
                 business.text_to_embed,
-                "https://llm.lab.sspcloud.fr/ollama/api/embed",
-                api_key="test_api_key",
             )
 
 
@@ -281,31 +277,7 @@ def test_vectorize_api_error(mock_card_dao, requests_mock):
         with pytest.raises(ValueError, match="Failed to vectorize text:"):
             business.vectorize(
                 business.text_to_embed,
-                "https://llm.lab.sspcloud.fr/ollama/api/embed",
-                api_key="test_api_key",
             )
-
-
-def test_vectorize_without_api_key(mock_card_dao, requests_mock):
-    """Test vectorization without an API key."""
-    mock_card_dao.get_card_by_id.return_value = MOCK_CARD_DATA
-
-    # Mock the Ollama API response
-    mock_embedding = [[0.1, 0.2, 0.3]]
-    requests_mock.post(
-        "https://llm.lab.sspcloud.fr/ollama/api/embed",
-        json={"embeddings": mock_embedding},
-        status_code=200,
-    )
-
-    with CardDao() as dao:
-        business = CardBusiness(dao, 420)
-        embedding = business.vectorize(
-            business.text_to_embed,
-            "https://llm.lab.sspcloud.fr/ollama/api/embed",
-        )
-
-    assert embedding == mock_embedding[0]
 
 
 # Test the main block
@@ -331,8 +303,6 @@ def test_main_block_success(
         business = CardBusiness(dao, 420)
         embedding = business.vectorize(
             business.text_to_embed,
-            "https://llm.lab.sspcloud.fr/ollama/api/embed",
-            os.getenv("LLM_API_KEY"),
         )
 
     assert embedding == mock_embedding[0]
@@ -360,6 +330,4 @@ def test_main_block_error(
         with pytest.raises(ValueError, match="Failed to vectorize text:"):
             business.vectorize(
                 business.text_to_embed,
-                "https://llm.lab.sspcloud.fr/ollama/api/embed",
-                os.getenv("LLM_API_KEY"),
             )

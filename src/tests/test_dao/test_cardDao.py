@@ -3,61 +3,60 @@ from unittest.mock import MagicMock, patch
 from dao.cardDao import CardDao
 import copy
 
-pytestmark = pytest.mark.filterwarnings(
-    "ignore::UserWarning"
-)  # Used to warn user that None was returned (in case the card is non existent)
+pytestmark = pytest.mark.filterwarnings("ignore::UserWarning")
 
 
 @pytest.fixture
 def mock_card_dao():
     """Provides a CardDao instance with mocked database interactions."""
-    base_card = {
-        "id": 420,
-        "card_key": "example_key",
-        "name": "Example Card",
-        "ascii_name": "Example Card",
-        "text": "This is an example text for the card.",
-        "type": "Creature",
-        "layout": "normal",
-        "mana_cost": "{1}{G}",
-        "mana_value": 2,
-        "converted_mana_cost": 2,
-        "face_converted_mana_cost": 0,
-        "face_mana_value": 0,
-        "face_name": None,
-        "first_printing": "2020-01-01",
-        "hand": None,
-        "life": None,
-        "loyalty": None,
-        "power": "2",
-        "toughness": "2",
-        "side": None,
-        "defense": None,
-        "edhrec_rank": 1234,
-        "edhrec_saltiness": 0.5,
-        "is_funny": 0,
-        "is_game_changer": 0,
-        "is_reserved": 0,
-        "has_alternative_deck_limit": 0,
-        "colors": "G",
-        "color_identity": "G",
-        "color_indicator": None,
-        "types": "Creature",
-        "subtypes": "Elf Druid",
-        "supertypes": None,
-        "keywords": "Trample",
-        "subsets": None,
-        "printings": "SET1",
-        "scryfall_oracle_id": "550e8400-e29b-41d4-a716-446655440000",
-        "text_to_embed": "Some text to embed",
-        "embedding": [0.1, 0.2, 0.3],
-        "raw": '{"rarity": "rare", "artist": "John Doe"}',
-    }
+    with patch("dao.cardDao.psycopg2.connect") as mock_connect:
+        base_card = {
+            "id": 420,
+            "card_key": "example_key",
+            "name": "Example Card",
+            "ascii_name": "Example Card",
+            "text": "This is an example text for the card.",
+            "type": "Creature",
+            "layout": "normal",
+            "mana_cost": "{1}{G}",
+            "mana_value": 2,
+            "converted_mana_cost": 2,
+            "face_converted_mana_cost": 0,
+            "face_mana_value": 0,
+            "face_name": None,
+            "first_printing": "2020-01-01",
+            "hand": None,
+            "life": None,
+            "loyalty": None,
+            "power": "2",
+            "toughness": "2",
+            "side": None,
+            "defense": None,
+            "edhrec_rank": 1234,
+            "edhrec_saltiness": 0.5,
+            "is_funny": 0,
+            "is_game_changer": 0,
+            "is_reserved": 0,
+            "has_alternative_deck_limit": 0,
+            "colors": "G",
+            "color_identity": "G",
+            "color_indicator": None,
+            "types": "Creature",
+            "subtypes": "Elf Druid",
+            "supertypes": None,
+            "keywords": "Trample",
+            "subsets": None,
+            "printings": "SET1",
+            "scryfall_oracle_id": "550e8400-e29b-41d4-a716-446655440000",
+            "text_to_embed": "Some text to embed",
+            "embedding": [0.1, 0.2, 0.3],
+            "raw": '{"rarity": "rare", "artist": "John Doe"}',
+        }
 
-    fake_db = {420: copy.deepcopy(base_card)}
-    next_id = [421]
+        fake_db = {420: copy.deepcopy(base_card)}
+        next_id = [421]
 
-    with patch("psycopg2.connect") as mock_connect:
+        # Setup mock connection and cursor
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_connect.return_value = mock_conn
@@ -73,9 +72,8 @@ def mock_card_dao():
             copy.deepcopy(v) for v in fake_db.values()
         ]
 
+        # Create DAO instance - this will now use the mocked psycopg2.connect
         dao = CardDao()
-        dao.conn = mock_conn
-        dao.cursor = mock_cursor
 
         # fetchone side effect
         def fetchone_side_effect(*args, **kwargs):
@@ -88,16 +86,13 @@ def mock_card_dao():
                 else None
             )
 
-            # COUNT(*)
             if "COUNT(*)" in sql:
                 return {"count": len(fake_db)}
 
-            # SELECT BY ID
             if sql.startswith("SELECT") and "WHERE ID = %S" in sql:
                 card_id = params[0]
                 return copy.deepcopy(fake_db.get(card_id))
 
-            # INSERT
             if sql.startswith("INSERT"):
                 card_data = {k: None for k in dao.columns_valid if k != "id"}
                 if params:
@@ -109,7 +104,6 @@ def mock_card_dao():
                 fake_db[card_data["id"]] = copy.deepcopy(card_data)
                 return copy.deepcopy(card_data)
 
-            # UPDATE
             if sql.startswith("UPDATE"):
                 if not params:
                     return None
@@ -125,7 +119,6 @@ def mock_card_dao():
                     return copy.deepcopy(fake_db[card_id])
                 return None
 
-            # DELETE
             if sql.startswith("DELETE"):
                 card_id = params[0]
                 return copy.deepcopy(fake_db.pop(card_id, None))

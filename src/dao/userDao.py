@@ -98,10 +98,6 @@ class UserDao(AbstractDao):
                     new_user = cursor.fetchone()
                     conn.commit()
                     return new_user
-        except psycopg2.IntegrityError as e:
-            if conn:
-                conn.rollback()
-            raise ValueError(f"User with email '{email}' already exists.") from e
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
@@ -189,9 +185,99 @@ class UserDao(AbstractDao):
                         user = cursor.fetchone()
                     return user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(f"Database connection failed: {e}") from e
+                raise ConnectionError(
+                    f"Database connection failed: {e}"
+                ) from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
+
+    def get_by_username(self, username):
+        """
+        Get a user in the database with its username.
+
+        Parameters
+        ----------
+        username : str
+            The username.
+
+        Returns:
+        --------
+        user : dict or None
+            - Dictionary containing the newly created user's information, such
+              as 'id', 'username', 'email' and 'password_hash', if the user
+              exists.
+            - None if no user with the given id exists in the database.
+
+        Raises:
+        -------
+        TypeError
+            If the id is not an integer.
+        ValueError
+            If the id is not strictly positive.
+        ConnectionError
+            If the database connection fails.
+        RuntimeError
+            If an unexpected database error occurs.
+        """
+        conn = None
+        try:
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(
+                        "SELECT id,             "
+                        "       username,       "
+                        "       email,          "
+                        "       password_hash   "
+                        "FROM users             "
+                        "WHERE username = %s    ",
+                        (username,),
+                    )
+                    user = cursor.fetchone()
+                return user
+        except psycopg2.OperationalError as e:
+            raise ConnectionError(f"Database connection failed: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"Unexpected database error: {e}") from e
+
+    def new_email(self, email):
+        """
+        Check if an email is already used.
+
+        Parameters
+        ----------
+        email :
+            The email used to sign up.
+
+        Returns:
+        --------
+        bool :
+            True if the email is not already in the database.
+
+        Raises:
+        -------
+        ConnectionError
+            If the database connection fails.
+        RuntimeError
+            If an unexpected database error occurs.
+        """
+        conn = None
+        try:
+            with dbConnection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(
+                        "SELECT *              "
+                        "FROM users            "
+                        "WHERE email = %s      ",
+                        (email),
+                    )
+                    users_db = cursor.fetchone()
+                    if users_db is None:
+                        return True
+                    return False
+        except psycopg2.OperationalError as e:
+            raise ConnectionError(f"Database connection failed: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"Unexpected database error: {e}") from e
 
     # UPDATE
     def update(self, id, username=None, email=None, password_hash=None):
@@ -239,7 +325,9 @@ class UserDao(AbstractDao):
                 updates.append("password_hash = %s")
                 params.append(password_hash)
             if not updates:
-                raise ValueError("At least one field to update must be provided")
+                raise ValueError(
+                    "At least one field to update must be provided"
+                )
             params.append(id)
             query = (
                 "UPDATE users               "
@@ -260,7 +348,9 @@ class UserDao(AbstractDao):
                         conn.commit()
                         return updated_user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(f"Database connection failed: {e}") from e
+                raise ConnectionError(
+                    f"Database connection failed: {e}"
+                ) from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
 
@@ -309,7 +399,9 @@ class UserDao(AbstractDao):
                         conn.commit()
                         return del_user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(f"Database connection failed: {e}") from e
+                raise ConnectionError(
+                    f"Database connection failed: {e}"
+                ) from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
             finally:

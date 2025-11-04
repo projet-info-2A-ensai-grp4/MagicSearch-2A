@@ -3,7 +3,6 @@ from services.embeddingService import EmbeddingService
 from dotenv import load_dotenv
 import os
 
-
 class CardBusiness:
     def __init__(
         self, dao: CardDao, card_id: int, embedding_service: EmbeddingService = None
@@ -21,7 +20,6 @@ class CardBusiness:
     def __repr__(self):
         attributes = ", ".join(f"{key}={getattr(self, key)}" for key in vars(self))
         return f"CardBusiness({attributes})"
-
 
     def generate_text_to_embed2(self):
         """Generate and update the text_to_embed attribute of a card."""

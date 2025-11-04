@@ -10,7 +10,6 @@ from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 from .abstractDao import AbstractDao
 from utils.dbConnection import dbConnection
-import json
 
 
 class CardDao(AbstractDao):
@@ -367,9 +366,7 @@ class CardDao(AbstractDao):
 
         try:
             # Execute the update query
-            query = sql.SQL(
-                "UPDATE cards SET text_to_embed = %s WHERE id = %s"
-            )
+            query = sql.SQL("UPDATE cards SET text_to_embed = %s WHERE id = %s")
             self.cursor.execute(query, (embed_me, card_id))
             self.conn.commit()
 
@@ -493,7 +490,7 @@ class CardDao(AbstractDao):
             raise ValueError(
                 f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
             )
-        if not (order_by in self.columns_valid):
+        if order_by not in self.columns_valid:
             raise ValueError(f"Invalid order_by: {order_by}")
         try:
             with dbConnection() as conn:

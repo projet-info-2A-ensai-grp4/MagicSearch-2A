@@ -1,7 +1,5 @@
 import psycopg2
-from psycopg2.extras import RealDictCursor
 from .abstractDao import AbstractDao
-from utils.dbConnection import dbConnection
 
 
 class UserDao(AbstractDao):
@@ -34,19 +32,17 @@ class UserDao(AbstractDao):
             raise TypeError("User id must be an integer")
         if id <= 0:
             raise ValueError("The user id must be positive")
-        conn = None
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(
-                        "SELECT *          "
-                        "FROM users        "
-                        "WHERE id = %s     "
-                        "LIMIT 1           ",
-                        (id,),
-                    )
-                    user = cursor.fetchone()
-                return user is not None
+            with self:
+                self.cursor.execute(
+                    "SELECT *          "
+                    "FROM users        "
+                    "WHERE id = %s     "
+                    "LIMIT 1           ",
+                    (id,),
+                )
+                user = self.cursor.fetchone()
+            return user is not None
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
@@ -80,24 +76,22 @@ class UserDao(AbstractDao):
         RuntimeError
             If an unexpected database error occurs.
         """
-        conn = None
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(
-                        "INSERT INTO users (username,        "
-                        "                   email,           "
-                        "                   password_hash)   "
-                        "VALUES (%s, %s, %s)                 "
-                        "RETURNING id,                       "
-                        "          username,                 "
-                        "          email,                    "
-                        "          password_hash             ",
-                        (username, email, password_hash),
-                    )
-                    new_user = cursor.fetchone()
-                    conn.commit()
-                    return new_user
+            with self:
+                self.cursor.execute(
+                    "INSERT INTO users (username,        "
+                    "                   email,           "
+                    "                   password_hash)   "
+                    "VALUES (%s, %s, %s)                 "
+                    "RETURNING id,                       "
+                    "          username,                 "
+                    "          email,                    "
+                    "          password_hash             ",
+                    (username, email, password_hash),
+                )
+                new_user = self.cursor.fetchone()
+                self.conn.commit()
+                return new_user
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
@@ -121,20 +115,18 @@ class UserDao(AbstractDao):
         RuntimeError
             If an unexpected database error occurs.
         """
-        conn = None
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(
-                        "SELECT id,              "
-                        "       username,        "
-                        "       email,           "
-                        "       password_hash    "
-                        "FROM users              "
-                        "ORDER BY id             "
-                    )
-                    users_db = cursor.fetchall()
-                    return users_db
+            with self:
+                self.cursor.execute(
+                    "SELECT id,              "
+                    "       username,        "
+                    "       email,           "
+                    "       password_hash    "
+                    "FROM users              "
+                    "ORDER BY id             "
+                )
+                users_db = self.cursor.fetchall()
+                return users_db
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
@@ -169,21 +161,19 @@ class UserDao(AbstractDao):
             If an unexpected database error occurs.
         """
         if self.exist(id):
-            conn = None
             try:
-                with dbConnection() as conn:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        cursor.execute(
-                            "SELECT id,             "
-                            "       username,       "
-                            "       email,          "
-                            "       password_hash   "
-                            "FROM users             "
-                            "WHERE id = %s          ",
-                            (id,),
-                        )
-                        user = cursor.fetchone()
-                    return user
+                with self:
+                    self.cursor.execute(
+                        "SELECT id,             "
+                        "       username,       "
+                        "       email,          "
+                        "       password_hash   "
+                        "FROM users             "
+                        "WHERE id = %s          ",
+                        (id,),
+                    )
+                    user = self.cursor.fetchone()
+                return user
             except psycopg2.OperationalError as e:
                 raise ConnectionError(
                     f"Database connection failed: {e}"
@@ -219,21 +209,19 @@ class UserDao(AbstractDao):
         RuntimeError
             If an unexpected database error occurs.
         """
-        conn = None
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(
-                        "SELECT id,             "
-                        "       username,       "
-                        "       email,          "
-                        "       password_hash   "
-                        "FROM users             "
-                        "WHERE username = %s    ",
-                        (username,),
-                    )
-                    user = cursor.fetchone()
-                return user
+            with self:
+                self.cursor.execute(
+                    "SELECT id,             "
+                    "       username,       "
+                    "       email,          "
+                    "       password_hash   "
+                    "FROM users             "
+                    "WHERE username = %s    ",
+                    (username,),
+                )
+                user = self.cursor.fetchone()
+            return user
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
@@ -260,20 +248,18 @@ class UserDao(AbstractDao):
         RuntimeError
             If an unexpected database error occurs.
         """
-        conn = None
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute(
-                        "SELECT *              "
-                        "FROM users            "
-                        "WHERE email = %s      ",
-                        (email),
-                    )
-                    users_db = cursor.fetchone()
-                    if users_db is None:
-                        return True
-                    return False
+            with self:
+                self.cursor.execute(
+                    "SELECT *              "
+                    "FROM users            "
+                    "WHERE email = %s      ",
+                    (email),
+                )
+                users_db = self.cursor.fetchone()
+                if users_db is None:
+                    return True
+                return False
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
@@ -339,14 +325,12 @@ class UserDao(AbstractDao):
                 "          password_hash    "
             )
 
-            conn = None
             try:
-                with dbConnection() as conn:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        cursor.execute(query, params)
-                        updated_user = cursor.fetchone()
-                        conn.commit()
-                        return updated_user
+                with self:
+                    self.cursor.execute(query, params)
+                    updated_user = self.cursor.fetchone()
+                    self.conn.commit()
+                    return updated_user
             except psycopg2.OperationalError as e:
                 raise ConnectionError(
                     f"Database connection failed: {e}"
@@ -384,20 +368,19 @@ class UserDao(AbstractDao):
         if self.exist(id):
             conn = None
             try:
-                with dbConnection() as conn:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        cursor.execute(
-                            "DELETE FROM users         "
-                            "WHERE id = %s             "
-                            "RETURNING id,             "
-                            "          username,       "
-                            "          email,          "
-                            "          password_hash   ",
-                            (id,),
-                        )
-                        del_user = cursor.fetchone()
-                        conn.commit()
-                        return del_user
+                with self:
+                    self.cursor.execute(
+                        "DELETE FROM users         "
+                        "WHERE id = %s             "
+                        "RETURNING id,             "
+                        "          username,       "
+                        "          email,          "
+                        "          password_hash   ",
+                        (id,),
+                    )
+                    del_user = self.cursor.fetchone()
+                    self.conn.commit()
+                    return del_user
             except psycopg2.OperationalError as e:
                 raise ConnectionError(
                     f"Database connection failed: {e}"

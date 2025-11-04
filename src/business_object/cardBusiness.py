@@ -22,24 +22,6 @@ class CardBusiness:
         attributes = ", ".join(f"{key}={getattr(self, key)}" for key in vars(self))
         return f"CardBusiness({attributes})"
 
-    def generate_text_to_embed(self):
-        """Generate and update the text_to_embed attribute of a card."""
-        if not self.id:
-            raise ValueError("Impossible to generate text_to_embed without a card ID.")
-
-        fields = [
-            self.name,
-            self.type,
-            self.text,
-            ", ".join(self.colors) if self.colors else None,
-        ]
-        text_to_embed = " | ".join(filter(None, fields))
-
-        with self.dao:
-            self.dao.edit_text_to_embed(text_to_embed, self.id)
-
-        self.text_to_embed = text_to_embed
-        return text_to_embed
 
     def generate_text_to_embed2(self):
         """Generate and update the text_to_embed attribute of a card."""

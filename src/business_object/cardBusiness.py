@@ -63,10 +63,10 @@ class CardBusiness:
 
 if __name__ == "__main__":
     with CardDao() as dao:
-        print(dao.get_by_id(421))
+        print(dao.get_by_id(420))
 
         try:
-            business = CardBusiness(dao, 421)
+            business = CardBusiness(dao, 420)
             business.generate_text_to_embed2()
             embedding = business.vectorize()
 

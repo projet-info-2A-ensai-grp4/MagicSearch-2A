@@ -8,7 +8,6 @@ class UserService:
         self.password_hash = password_hash
         self.actual_user = UserDao()
 
-    # Voir plus tard si Tanguy valide directement sur javascript
     def valid_username(self):
         """
         Validate a username based on specific rules:
@@ -32,12 +31,12 @@ class UserService:
             If the username is empty, has less than 3 or more than 20
             characters, does not start with a letter.
         """
+        if self.username is None:
+            raise ValueError("The username cannot be empty")
         username = self.username.strip()
-        if username is None:
-            raise ValueError("The username cannot be empty.")
         if not (3 <= len(username) <= 20):
             raise ValueError(
-                "The username must have between 3 and 20 characters."
+                "The username must have between 3 and 20 characters"
             )
         allowed_symbols = {"-", "_", "."}
         for char in username:
@@ -47,7 +46,7 @@ class UserService:
                     f"and '-', '_', '.')"
                 )
         if not username[0].isalpha():
-            raise ValueError("The username has to begin with a letter.")
+            raise ValueError("The username has to begin with a letter")
         return True
 
     def signUp(self):
@@ -67,12 +66,12 @@ class UserService:
             Dictionary containing the newly created user's information, such as
             'id', 'username', 'email' and 'password_hash'.
         """
-        if not self.valid_username(self.username):
+        if not self.valid_username():
             raise ValueError()
-        if self.actual_user.get_by_username(self.username) is None:
-            raise ValueError("This username is already used.")
+        if self.actual_user.get_by_username(self.username) is not None:
+            raise ValueError("This username is already used")
         if not UserDao.new_email(self.email):
-            raise ValueError("This email is already used.")
+            raise ValueError("This email is already used")
         new_user = UserDao.create(
             self.username, self.email, self.password_hash
         )
@@ -102,7 +101,7 @@ class UserService:
         """
         user = UserDao.get_by_username(self.username)
         if user is None:
-            raise ValueError("This username does not exist.")
+            raise ValueError("This username does not exist")
         if user["password_hash"] != self.password_hash:
-            raise ValueError("Invalid password.")
+            raise ValueError("Invalid password")
         return user

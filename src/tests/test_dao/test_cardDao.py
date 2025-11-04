@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from dao.cardDao import CardDao
+import copy
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore::UserWarning"
@@ -9,11 +10,7 @@ pytestmark = pytest.mark.filterwarnings(
 
 @pytest.fixture
 def mock_card_dao():
-    """
-    Provides a CardDao instance whose database calls are mocked.
-    Simulates a database with cards stored in a dict keyed by ID.
-    """
-    # Base fake card
+    """Provides a CardDao instance with mocked database interactions."""
     base_card = {
         "id": 420,
         "card_key": "example_key",
@@ -53,12 +50,11 @@ def mock_card_dao():
         "printings": "SET1",
         "scryfall_oracle_id": "550e8400-e29b-41d4-a716-446655440000",
         "text_to_embed": "Some text to embed",
-        "embedding": [0.1, 0.2, 0.3],  # correction : vrai list Python
+        "embedding": [0.1, 0.2, 0.3],
         "raw": '{"rarity": "rare", "artist": "John Doe"}',
     }
 
-    # Simulated DB: dict[id] -> card
-    fake_db = {420: base_card.copy()}
+    fake_db = {420: copy.deepcopy(base_card)}
     next_id = [421]
 
     with patch("psycopg2.connect") as mock_connect:
@@ -67,64 +63,72 @@ def mock_card_dao():
         mock_connect.return_value = mock_conn
         mock_conn.cursor.return_value = mock_cursor
 
-        # make "with conn.cursor() as cur:" work
+        # Context manager support
         mock_cursor.__enter__.return_value = mock_cursor
         mock_cursor.__exit__.return_value = None
         mock_cursor.execute.return_value = None
 
+        # fetchall returns deep copies to avoid mutation issues
+        mock_cursor.fetchall.side_effect = lambda: [
+            copy.deepcopy(v) for v in fake_db.values()
+        ]
+
         dao = CardDao()
+        dao.conn = mock_conn
+        dao.cursor = mock_cursor
 
         # fetchone side effect
         def fetchone_side_effect(*args, **kwargs):
             if not mock_cursor.execute.call_args:
                 return None
-            last_query = mock_cursor.execute.call_args[0][0]
+            sql = mock_cursor.execute.call_args[0][0].strip().upper()
             params = (
                 mock_cursor.execute.call_args[0][1]
                 if len(mock_cursor.execute.call_args[0]) > 1
                 else None
             )
-            sql = last_query.strip().upper()
 
-            # --- COUNT ---
+            # COUNT(*)
             if "COUNT(*)" in sql:
                 return {"count": len(fake_db)}
-            # --- INSERT ---
+
+            # SELECT BY ID
+            if sql.startswith("SELECT") and "WHERE ID = %S" in sql:
+                card_id = params[0]
+                return copy.deepcopy(fake_db.get(card_id))
+
+            # INSERT
             if sql.startswith("INSERT"):
-                card_data = {col: None for col in dao.columns_valid if col != "id"}
+                card_data = {k: None for k in dao.columns_valid if k != "id"}
                 if params:
                     for i, key in enumerate(card_data.keys()):
                         if i < len(params):
                             card_data[key] = params[i]
                 card_data["id"] = next_id[0]
                 next_id[0] += 1
-                fake_db[card_data["id"]] = card_data
-                return card_data
+                fake_db[card_data["id"]] = copy.deepcopy(card_data)
+                return copy.deepcopy(card_data)
 
-            # --- SELECT ---
-            elif sql.startswith("SELECT"):
-                card_id = params[0]
-                return fake_db.get(card_id)
-
-            # --- UPDATE ---
-            elif sql.startswith("UPDATE"):
+            # UPDATE
+            if sql.startswith("UPDATE"):
+                if not params:
+                    return None
                 card_id = params[-1]
                 if card_id in fake_db:
                     set_part = sql.split("SET")[1].split("WHERE")[0]
                     cols = [
-                        part.split("=")[0].strip().lower()
-                        for part in set_part.split(",")
+                        p.split("=")[0].strip().lower() for p in set_part.split(",")
                     ]
-                    for i, col in enumerate(cols):
-                        if i < len(params) - 1:
-                            fake_db[card_id][col] = params[i]
-                    return fake_db[card_id]
+                    values = params[:-1]
+                    for col, val in zip(cols, values):
+                        fake_db[card_id][col] = val
+                    return copy.deepcopy(fake_db[card_id])
                 return None
 
-            # --- DELETE ---
-            elif sql.startswith("DELETE"):
+            # DELETE
+            if sql.startswith("DELETE"):
                 card_id = params[0]
-                return fake_db.pop(card_id, None)
+                return copy.deepcopy(fake_db.pop(card_id, None))
 
             return None
 
@@ -139,11 +143,13 @@ def mock_card_dao():
 
 
 def test_shape(mock_card_dao):
-    dao, cursor, fake_db = mock_card_dao
+    dao, mock_cursor, fake_db = mock_card_dao
     row_count, col_count = dao.shape()
     assert row_count == len(fake_db)
     assert col_count == len(dao.columns_valid)
-    cursor.execute.assert_called()
+    mock_cursor.execute.assert_called()
+    assert "COUNT(*)" in mock_cursor.execute.call_args[0][0].upper()
+    mock_cursor.fetchone.assert_called_once()
 
 
 def test_exist(mock_card_dao):
@@ -209,22 +215,31 @@ def test_delete(mock_card_dao):
 def test_filter_with_valid_kwargs(mock_card_dao):
     dao, mock_cursor, fake_db = mock_card_dao
 
-    fake_db[421] = fake_db[420].copy()
+    # Ajouter une seconde carte pour tester le filtrage
+    fake_db[421] = copy.deepcopy(fake_db[420])
     fake_db[421]["id"] = 421
     fake_db[421]["name"] = "Other Card"
     fake_db[421]["type"] = "Artifact"
 
-    expected_rows = [fake_db[420]]
-    mock_cursor.fetchall.return_value = expected_rows
+    # Mock le retour de fetchall pour filtrer correctement par type
+    mock_cursor.fetchall.side_effect = lambda: [
+        card for card in fake_db.values() if card["type"] == "Creature"
+    ]
+
     results = dao.filter(order_by="id", type="Creature")
     query, params = mock_cursor.execute.call_args[0]
+
+    # Vérifications de la requête SQL
     assert "SELECT * FROM cards" in query
     assert "WHERE TRUE AND type = %s" in query
     assert "ORDER BY id ASC" in query
     assert "LIMIT %s OFFSET %s" in query
     assert params[:-2] == ["Creature"]
     assert params[-2:] == [100, 0]
-    assert results == expected_rows
+
+    # Vérification des résultats filtrés
+    assert all(r["type"] == "Creature" for r in results)
+    assert [r["id"] for r in results] == [420]  # seul l'id 420 correspond au filtre
 
 
 def test_get_card_by_id_nonexistent(card_dao):

@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+import sys
 from utils.dbConnection import dbConnection
+from psycopg2.extras import RealDictCursor
 
 
 class AbstractDao(ABC):
@@ -8,17 +10,18 @@ class AbstractDao(ABC):
         self.cursor = None
 
     def __enter__(self):
-        """Utilisation du context manager de dbConnection"""
         self.db = dbConnection()
-        self.conn = self.db.__enter__()  # ouvre la connexion via dbConnection
-        self.cursor = self.conn.cursor()
+        try:
+            self.conn = self.db.__enter__()
+            self.cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+        except Exception:
+            self.db.__exit__(*sys.exc_info())
+            raise
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Ferme proprement le curseur et la connexion"""
         if self.cursor:
             self.cursor.close()
-        # on délègue la fermeture à dbConnection
         self.db.__exit__(exc_type, exc_val, exc_tb)
 
     @abstractmethod

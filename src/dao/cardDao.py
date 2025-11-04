@@ -7,10 +7,7 @@
 
 import psycopg2
 from psycopg2 import sql
-from psycopg2.extras import RealDictCursor
 from .abstractDao import AbstractDao
-from utils.dbConnection import dbConnection
-import json
 
 
 class CardDao(AbstractDao):
@@ -81,18 +78,16 @@ class CardDao(AbstractDao):
             error and exits the program.
         """
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    sql_query = """
-                    SELECT count(*) FROM cards;
-                    """
-                    cursor.execute(sql_query)
-                    row = cursor.fetchone()
-                    return row.get("count"), len(self.columns_valid)
-
+            with self:
+                sql_query = """
+                SELECT count(*) FROM cards;
+                """
+                self.cursor.execute(sql_query)
+                row = self.cursor.fetchone()
+                return row.get("count"), len(self.columns_valid)
         except Exception as e:
             print(f"Error connecting to the database: {e}")
-            exit()
+            raise
 
     def exist(self, id):
         """
@@ -120,15 +115,14 @@ class CardDao(AbstractDao):
         if id < 0:
             raise ValueError("Card ID must be a positive integer")
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    sql_query = """
-                    SELECT * FROM cards WHERE id = %s LIMIT 1;
-                    """
-                    param = (id,)
-                    cursor.execute(sql_query, param)
-                    row = cursor.fetchone()
-                    return row is not None
+            with self:
+                sql_query = """
+                SELECT * FROM cards WHERE id = %s LIMIT 1;
+                """
+                param = (id,)
+                self.cursor.execute(sql_query, param)
+                row = self.cursor.fetchone()
+                return row is not None
 
         except Exception as e:
             print(f"Error connecting to the database: {e}")
@@ -152,15 +146,14 @@ class CardDao(AbstractDao):
         """
         if self.exist(id):
             try:
-                with dbConnection() as conn:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        sql_query = """
-                        SELECT * FROM cards WHERE id = %s LIMIT 1;
-                        """
-                        param = (id,)
-                        cursor.execute(sql_query, param)
-                        row = cursor.fetchone()
-                        return row
+                with self:
+                    sql_query = """
+                    SELECT * FROM cards WHERE id = %s LIMIT 1;
+                    """
+                    param = (id,)
+                    self.cursor.execute(sql_query, param)
+                    row = self.cursor.fetchone()
+                    return row
             except Exception as e:
                 print(f"Error connecting to the database: {e}")
                 exit()
@@ -213,20 +206,19 @@ class CardDao(AbstractDao):
         }
         # Add None for the keys None - specified.
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    columns = ", ".join(card_data.keys())
-                    placeholders = ", ".join(["%s"] * len(card_data))
-                    sql_query = f"""
-                        INSERT INTO cards ({columns})
-                        VALUES ({placeholders})
-                        RETURNING *;
-                        """
-                    params = tuple(card_data.values())
-                    cursor.execute(sql_query, params)
-                    conn.commit()
-                    new_card = cursor.fetchone()
-                    return new_card
+            with self:
+                columns = ", ".join(card_data.keys())
+                placeholders = ", ".join(["%s"] * len(card_data))
+                sql_query = f"""
+                    INSERT INTO cards ({columns})
+                    VALUES ({placeholders})
+                    RETURNING *;
+                    """
+                params = tuple(card_data.values())
+                self.cursor.execute(sql_query, params)
+                self.conn.commit()
+                new_card = self.cursor.fetchone()
+                return new_card
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
@@ -274,20 +266,19 @@ class CardDao(AbstractDao):
             columns = list(kwargs.keys())
             values = list(kwargs.values())
             try:
-                with dbConnection() as conn:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        set_clause = ", ".join([f"{col} = %s" for col in columns])
-                        sql_query = f"""
-                            UPDATE cards
-                            SET {set_clause}
-                            WHERE id = %s
-                            RETURNING *;
-                        """
-                        params = (*values, id)
-                        cursor.execute(sql_query, params)
-                        conn.commit()
-                        updated_card = cursor.fetchone()
-                        return updated_card
+                with self:
+                    set_clause = ", ".join([f"{col} = %s" for col in columns])
+                    sql_query = f"""
+                        UPDATE cards
+                        SET {set_clause}
+                        WHERE id = %s
+                        RETURNING *;
+                    """
+                    params = (*values, id)
+                    self.cursor.execute(sql_query, params)
+                    self.conn.commit()
+                    updated_card = self.cursor.fetchone()
+                    return updated_card
             except Exception as e:
                 print(f"Error connecting to the database: {e}")
                 exit()
@@ -322,18 +313,17 @@ class CardDao(AbstractDao):
         """
         if self.exist(id):
             try:
-                with dbConnection() as conn:
-                    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                        sql_query = """
-                        DELETE FROM cards
-                        WHERE id = %s
-                        RETURNING *;
-                        """
-                        param = (id,)
-                        cursor.execute(sql_query, param)
-                        row = cursor.fetchone()
-                        conn.commit()
-                        return row
+                with self:
+                    sql_query = """
+                    DELETE FROM cards
+                    WHERE id = %s
+                    RETURNING *;
+                    """
+                    param = (id,)
+                    self.cursor.execute(sql_query, param)
+                    row = self.cursor.fetchone()
+                    self.conn.commit()
+                    return row
             except Exception as e:
                 print(f"Error connecting to the database: {e}")
                 exit()
@@ -367,9 +357,7 @@ class CardDao(AbstractDao):
 
         try:
             # Execute the update query
-            query = sql.SQL(
-                "UPDATE cards SET text_to_embed = %s WHERE id = %s"
-            )
+            query = sql.SQL("UPDATE cards SET text_to_embed = %s WHERE id = %s")
             self.cursor.execute(query, (embed_me, card_id))
             self.conn.commit()
 
@@ -496,31 +484,30 @@ class CardDao(AbstractDao):
         if not (order_by in self.columns_valid):
             raise ValueError(f"Invalid order_by: {order_by}")
         try:
-            with dbConnection() as conn:
-                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    base_query = "SELECT * FROM cards WHERE TRUE"
-                    params = []
-                    filters = []
-                    for col, vals in kwargs.items():
-                        if vals is not None:
-                            if isinstance(vals, (list, tuple)):
-                                placeholders = ",".join(["%s"] * len(vals))
-                                filters.append(f"{col} IN ({placeholders})")
-                                params.extend(vals)
-                            else:
-                                filters.append(f"{col} = %s")
-                                params.append(vals)
+            with self:
+                base_query = "SELECT * FROM cards WHERE TRUE"
+                params = []
+                filters = []
+                for col, vals in kwargs.items():
+                    if vals is not None:
+                        if isinstance(vals, (list, tuple)):
+                            placeholders = ",".join(["%s"] * len(vals))
+                            filters.append(f"{col} IN ({placeholders})")
+                            params.extend(vals)
                         else:
-                            filters.append("FALSE")
-                    if filters:
-                        base_query += " AND " + " AND ".join(filters)
-                    if order_by:
-                        direction = "ASC" if asc else "DESC"
-                        base_query += f" ORDER BY {order_by} {direction}"
-                    base_query += " LIMIT %s OFFSET %s"
-                    params.extend([limit, offset])
-                    cursor.execute(base_query, params)
-                    return cursor.fetchall()
+                            filters.append(f"{col} = %s")
+                            params.append(vals)
+                    else:
+                        filters.append("FALSE")
+                if filters:
+                    base_query += " AND " + " AND ".join(filters)
+                if order_by:
+                    direction = "ASC" if asc else "DESC"
+                    base_query += f" ORDER BY {order_by} {direction}"
+                base_query += " LIMIT %s OFFSET %s"
+                params.extend([limit, offset])
+                self.cursor.execute(base_query, params)
+                return self.cursor.fetchall()
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()

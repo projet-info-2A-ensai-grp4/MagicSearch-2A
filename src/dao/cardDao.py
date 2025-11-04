@@ -481,7 +481,7 @@ class CardDao(AbstractDao):
             raise ValueError(
                 f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
             )
-        if not (order_by in self.columns_valid):
+        if order_by not in self.columns_valid:
             raise ValueError(f"Invalid order_by: {order_by}")
         try:
             with self:

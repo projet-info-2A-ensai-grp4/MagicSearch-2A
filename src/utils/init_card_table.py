@@ -14,45 +14,47 @@ for card_key, card_list in cards.items():
         continue
     card = card_list[0]
 
-    rows.append((
-        card_key,
-        card.get("name"),
-        card.get("asciiName"),
-        card.get("text"),
-        card.get("type"),
-        card.get("layout"),
-        card.get("manaCost"),
-        card.get("manaValue"),
-        card.get("convertedManaCost"),
-        card.get("faceConvertedManaCost"),
-        card.get("faceManaValue"),
-        card.get("faceName"),
-        card.get("firstPrinting"),
-        card.get("hand"),
-        card.get("life"),
-        card.get("loyalty"),
-        card.get("power"),
-        card.get("toughness"),
-        card.get("side"),
-        card.get("defense"),
-        card.get("edhrecRank"),
-        card.get("edhrecSaltiness"),
-        card.get("isFunny"),
-        card.get("isGameChanger"),
-        card.get("isReserved"),
-        card.get("hasAlternativeDeckLimit"),
-        card.get("colors"),
-        card.get("colorIdentity"),
-        card.get("colorIndicator"),
-        card.get("types"),
-        card.get("subtypes"),
-        card.get("supertypes"),
-        card.get("keywords"),
-        card.get("subsets"),
-        card.get("printings"),
-        card.get("identifiers", {}).get("scryfallOracleId"),
-        json.dumps(card)
-    ))
+    rows.append(
+        (
+            card_key,
+            card.get("name"),
+            card.get("asciiName"),
+            card.get("text"),
+            card.get("type"),
+            card.get("layout"),
+            card.get("manaCost"),
+            card.get("manaValue"),
+            card.get("convertedManaCost"),
+            card.get("faceConvertedManaCost"),
+            card.get("faceManaValue"),
+            card.get("faceName"),
+            card.get("firstPrinting"),
+            card.get("hand"),
+            card.get("life"),
+            card.get("loyalty"),
+            card.get("power"),
+            card.get("toughness"),
+            card.get("side"),
+            card.get("defense"),
+            card.get("edhrecRank"),
+            card.get("edhrecSaltiness"),
+            card.get("isFunny"),
+            card.get("isGameChanger"),
+            card.get("isReserved"),
+            card.get("hasAlternativeDeckLimit"),
+            card.get("colors"),
+            card.get("colorIdentity"),
+            card.get("colorIndicator"),
+            card.get("types"),
+            card.get("subtypes"),
+            card.get("supertypes"),
+            card.get("keywords"),
+            card.get("subsets"),
+            card.get("printings"),
+            card.get("identifiers", {}).get("scryfallOracleId"),
+            json.dumps(card),
+        )
+    )
 
 # --- Use dbConnection ---
 with dbConnection() as conn:
@@ -102,7 +104,9 @@ with dbConnection() as conn:
         )
         """)
 
-        execute_values(cur, """
+        execute_values(
+            cur,
+            """
             INSERT INTO cards (
                 card_key, name, ascii_name, text, type, layout, mana_cost,
                 mana_value, converted_mana_cost, face_converted_mana_cost, face_mana_value,
@@ -150,7 +154,9 @@ with dbConnection() as conn:
                 printings = EXCLUDED.printings,
                 scryfall_oracle_id = EXCLUDED.scryfall_oracle_id,
                 raw = EXCLUDED.raw
-        """, rows)
+        """,
+            rows,
+        )
 
     conn.commit()
 print("Cards table created and data inserted successfully.")

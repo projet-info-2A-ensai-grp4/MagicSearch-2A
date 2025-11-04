@@ -1,6 +1,3 @@
-from unittest.mock import patch
-import dao.cardDao as card_dao_module
-import business_object.cardBusiness as card_business_module
 
 
 MOCK = {

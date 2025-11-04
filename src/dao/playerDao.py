@@ -4,7 +4,7 @@ from pgvector.psycopg2 import register_vector
 from dao.userDao import UserDao
 from utils.dbConnection import dbConnection
 from services.embeddingService import EmbeddingService
-
+import numpy
 
 class PlayerDao(UserDao):
     def __init__(self, embedding_service: EmbeddingService = None):
@@ -19,7 +19,7 @@ class PlayerDao(UserDao):
         super().__init__()
         self.embedding_service = embedding_service or EmbeddingService()
 
-    def searchCards(self, query, filters=None, limit=5):
+    def natural_language_search(self, query, filters=None, limit=5):
         """
         Search for Magic cards using vector similarity search.
 
@@ -53,7 +53,7 @@ class PlayerDao(UserDao):
         # Handle query: embed text on-the-fly if it's a string
         if isinstance(query, str):
             query_embedding = self.embedding_service.vectorize(query)
-        elif isinstance(query, (list, tuple)):
+        elif isinstance(query, (list, tuple, numpy.ndarray)):
             query_embedding = query
         else:
             raise ValueError("Query must be either a string or an embedding vector")
@@ -67,11 +67,12 @@ class PlayerDao(UserDao):
                     query_sql = """
                         SELECT 
                             id,
-                            card_name,
-                            card_text,
-                            card_type,
-                            color,
+                            name,
+                            text,
+                            type,
+                            color_identity,
                             mana_cost,
+                            scryfall_oracle_id,
                             embedding <-> %s::vector as distance
                         FROM cards
                     """
@@ -126,21 +127,21 @@ if __name__ == "__main__":
 
     try:
         # Test 1: Search using card id 420's embedding
-        print("Test 1: Getting embedding from card id 420...")
-        test_embedding = player_dao.get_card_embedding(420)
+        print("Test 1: Getting embedding from card id 422...")
+        test_embedding = player_dao.get_card_embedding(422)
 
-        if test_embedding:
-            results = player_dao.searchCards(test_embedding, limit=5)
+        if test_embedding is not None:
+            results = player_dao.natural_language_search(test_embedding, limit=5)
             print(f"Found {len(results)} similar cards:")
             for card in results:
-                print(f"  - {card['card_name']} (distance: {card['distance']:.4f})")
+                print(f"  - {card['name']} (distance: {card['distance']:.4f})")
 
         # Test 2: Search using text query (embedded on-the-fly)
         print("\nTest 2: Searching with text query...")
-        results = player_dao.searchCards("powerful creature with flying", limit=5)
+        results = player_dao.natural_language_search("creature that goes well with a blue-black deck synergy around losing pv to draw cards", limit=5)
         print(f"Found {len(results)} cards:")
         for card in results:
-            print(f"  - {card['card_name']} (distance: {card['distance']:.4f})")
+            print(f"  - {card['name']} (distance: {card['distance']:.4f})")
 
     except Exception as e:
-        print(f"Error: {type(e).__name__}: {e}")
+        print(f"Error running Tests: {type(e).__name__}: {e}")

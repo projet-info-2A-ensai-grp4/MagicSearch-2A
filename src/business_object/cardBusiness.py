@@ -1,7 +1,7 @@
+import os
+from dotenv import load_dotenv
 from dao.cardDao import CardDao
 from services.embeddingService import EmbeddingService
-from dotenv import load_dotenv
-import os
 
 class CardBusiness:
     def __init__(

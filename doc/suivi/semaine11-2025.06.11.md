@@ -19,6 +19,8 @@ Alexandre Gasowski
 Victor Jean
 - [x] implement search function in user class (finished but not finished bc still not working)
 - [ ] new tests for cardDao edit_vector and text_to_embed
+- [ ] préciser requirements à installer (la liste)
+- [ ] write sth about sspcloud (credentials needed for api and postgres database)
 
 ### Nom Prénom élève 4
 Lina Louati

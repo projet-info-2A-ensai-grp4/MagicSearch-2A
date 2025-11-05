@@ -91,7 +91,7 @@ class UserDao(AbstractDao):
                 )
                 new_user = self.cursor.fetchone()
                 self.conn.commit()
-                new_user["role"] = "player"
+                new_user["role"] = 1
                 return new_user
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e

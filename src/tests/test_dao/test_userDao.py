@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from psycopg2 import IntegrityError
 from dao.userDao import UserDao
 
 
@@ -27,6 +26,10 @@ def mock_user_dao():
 
     mock_conn.cursor.return_value = mock_cursor
     mock_connect.return_value = mock_conn
+
+    mock_cursor.__enter__.return_value = mock_cursor
+    mock_cursor.__exit__.return_value = None
+    mock_cursor.execute.return_value = None
 
     # Side effect for SQL behavior
     def execute_side_effect(sql, params=None):
@@ -163,7 +166,6 @@ def test_create_ok(mock_user_dao):
     assert user["id"] in fake_db
     assert fake_db[user["id"]]["username"] == "hermione"
     mock_conn.commit.assert_called_once()
-
 
 
 # get_by_id()

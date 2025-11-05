@@ -39,3 +39,7 @@ async def search(query: Query):
     except Exception as e:
         print(f"Erreur dans /search : {e}")
         return {"error": str(e)}
+
+@app.post("/filter")
+async def filter(query: Query):
+    pass

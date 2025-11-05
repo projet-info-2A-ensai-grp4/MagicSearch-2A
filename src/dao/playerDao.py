@@ -66,7 +66,7 @@ class PlayerDao(UserDao):
 
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                     query_sql = """
-                        SELECT 
+                        SELECT
                             id,
                             name,
                             text,

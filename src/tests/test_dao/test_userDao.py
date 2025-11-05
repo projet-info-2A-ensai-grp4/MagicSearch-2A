@@ -165,7 +165,6 @@ def test_create_ok(mock_user_dao):
     mock_conn.commit.assert_called_once()
 
 
-
 # get_by_id()
 def test_get_by_id_found(mock_user_dao):
     dao, _, mock_conn, _, _ = mock_user_dao

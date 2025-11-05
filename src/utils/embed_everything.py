@@ -7,13 +7,13 @@ from typing import Optional
 
 
 def process_single_card(
-    dao: CardDao, 
-    card_id: int, 
+    dao: CardDao,
+    card_id: int,
     max_retries: int = 3
 ) -> bool:
     """
     Process a single card with retry logic.
-    
+     
     Parameters
     ----------
     dao : CardDao

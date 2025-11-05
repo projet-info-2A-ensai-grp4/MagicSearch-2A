@@ -68,7 +68,7 @@ class UserService:
             'id', 'username', 'email' and 'password_hash'.
         """
         if not self.valid_username():
-            raise ValueError()
+            raise ValueError("This username is not valid")
         if self.actual_user.get_by_username(self.username) is not None:
             raise ValueError("This username is already used")
         if not self.actual_user.new_email(self.email):

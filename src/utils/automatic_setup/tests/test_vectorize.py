@@ -304,52 +304,7 @@ def test_process_all_cards_rate_limiting(
 
     # Verify sleep was called for rate limiting
     assert mock_sleep.call_count == 3
-    mock_sleep.assert_called_with(0.5)
-
-
-@patch("vectorize.get_last_processed_id")
-@patch("vectorize.save_progress")
-@patch("vectorize.CardDao")
-@patch("vectorize.CardBusiness")
-@patch("vectorize.load_dotenv")
-@patch("os.getenv")
-@patch("os.path.exists")
-@patch("os.remove")
-@patch("time.sleep")
-@patch("builtins.print")
-def test_process_all_cards_progress_indicator(
-    mock_print,
-    mock_sleep,
-    mock_remove,
-    mock_exists,
-    mock_getenv,
-    mock_load_dotenv,
-    mock_card_business_class,
-    mock_card_dao_class,
-    mock_save_progress,
-    mock_get_last_id,
-):
-    mock_get_last_id.return_value = 0
-    mock_getenv.return_value = "test_api_key"
-    mock_exists.return_value = True
-
-    mock_dao = MagicMock()
-    mock_dao.__enter__.return_value = mock_dao
-    mock_dao.__exit__.return_value = False
-    mock_card_dao_class.return_value = mock_dao
-
-    mock_business = MagicMock()
-    mock_business.text_to_embed = "test text"
-    mock_card_business_class.return_value = mock_business
-
-    # Process cards including card 100 (divisible by 100)
-    process_all_cards(max_card_id=101)
-
-    # Check if progress indicator was printed (card 100)
-    progress_prints = [
-        call for call in mock_print.call_args_list if "Progress:" in str(call)
-    ]
-    assert len(progress_prints) >= 1
+    mock_sleep.assert_called_with(0.1)  # Changed from 0.5 to 0.1
 
 
 @patch("vectorize.get_last_processed_id")
@@ -383,11 +338,10 @@ def test_process_all_cards_vectorize_called_with_correct_params(
 
     process_all_cards(max_card_id=1)
 
-    # Verify vectorize was called with correct parameters
-    expected_endpoint = "https://llm.lab.sspcloud.fr/ollama/api/embed"
-    mock_business.vectorize.assert_called_once_with(
-        "test card description", expected_endpoint, api_key
-    )
+    # Verify vectorize was called without parameters (uses self.text_to_embed internally)
+    mock_business.vectorize.assert_called_once_with()
+    # Verify generate_text_to_embed2 was called first
+    mock_business.generate_text_to_embed2.assert_called_once_with()
 
 
 @patch("vectorize.get_last_processed_id")

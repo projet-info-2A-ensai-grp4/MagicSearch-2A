@@ -475,7 +475,7 @@ gum style --border rounded --border-foreground 212 --padding "1 2" --margin "1 0
     "$(gum style --foreground 212 '✨ Step 5: Optional Enhancements')"
 
 echo ""
-gum style --foreground 147 "Choose what you want to set up (use Space to select, Enter to confirm):"
+gum style --foreground 147 "Choose what you want to set up (use x to select, Enter to confirm):"
 echo ""
 
 ENHANCEMENTS=$(gum choose --no-limit "Download card images" "Generate embeddings")

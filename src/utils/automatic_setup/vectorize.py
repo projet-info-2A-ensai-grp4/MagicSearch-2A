@@ -64,7 +64,7 @@ def process_all_cards(max_card_id=32548):
                     save_progress(card_id)
 
                     # Rate limiting to avoid API throttling
-                    time.sleep(0.1)
+                    time.sleep(0.5)
 
                 except ValueError as e:
                     print(f"⚠️  Error processing card {card_id}: {e}")

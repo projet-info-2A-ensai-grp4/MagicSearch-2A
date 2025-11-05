@@ -17,10 +17,11 @@ Alexandre Gasowski
 
 ### Nom Prénom élève 3
 Victor Jean
-- [x] implement search function in user class (finished but not finished bc still not working)
-- [ ] new tests for cardDao edit_vector and text_to_embed
-- [ ] préciser requirements à installer (la liste)
-- [ ] write sth about sspcloud (credentials needed for api and postgres database)
+- [x] implement natural search function
+- [x] new tests for cardDao edit_vector and text_to_embed
+- [ ] Beautiful init script needs to be done (to initialize the project!)
+- [ ] Filtering function
+
 
 ### Nom Prénom élève 4
 Lina Louati
@@ -29,8 +30,7 @@ Lina Louati
 
 ### Nom Prénom élève 5
 Charles Ozeel
-- ras
-
+- [ ] update README.md préciser requirements à installer (la liste), write something about sspcloud (credentials needed for api and postgres database)
 
 ## Backlog
 > Liste des tâches en attente de prise en charge.

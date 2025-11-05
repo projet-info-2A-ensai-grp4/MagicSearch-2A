@@ -139,7 +139,9 @@ if __name__ == "__main__":
 
         # Test 2: Search using text query (embedded on-the-fly)
         print("\nTest 2: Searching with text query...")
-        results = player_dao.natural_language_search("creature that goes well with a blue-black deck synergy around losing pv to draw cards", limit=5)
+        results = player_dao.natural_language_search("""creature that goes well with a blue-black
+                                                        deck synergy around losing
+                                                        pv to draw cards""", limit=5)
         print(f"Found {len(results)} cards:")
         for card in results:
             print(f"  - {card['name']} (distance: {card['distance']:.4f})")

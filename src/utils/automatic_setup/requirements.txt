@@ -7,3 +7,4 @@ jason
 pgvector
 uvicorn
 fastapi
+httpx

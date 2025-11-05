@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 import pytest
-from scryfall import get_card_image_url, fetch_and_update_images
+from utils.get_scryfall_url import get_card_image_url, fetch_and_update_images
 
 
 def test_get_card_image_url_success():

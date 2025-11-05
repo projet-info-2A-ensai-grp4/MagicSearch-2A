@@ -1,7 +1,9 @@
 document.querySelector(".search-bar").addEventListener("submit", async (e) => {
   e.preventDefault();
   const input = e.target.querySelector("input");
-  const res = await fetch("/search", {
+
+  // URL complète de ton backend
+  const res = await fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: input.value }),

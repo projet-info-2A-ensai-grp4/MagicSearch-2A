@@ -6,6 +6,7 @@ from utils.dbConnection import dbConnection
 from services.embeddingService import EmbeddingService
 import numpy
 
+
 class PlayerDao(UserDao):
     def __init__(self, embedding_service: EmbeddingService = None):
         """

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MagicSearch - Semantic search for Magic The Gathering Cards</title>
-    <link rel="stylesheet" href="src/static/index.css">
+    <link rel="stylesheet" href="/static/index.css">
 </head>
 
 <body>
@@ -15,14 +15,14 @@
             </div>
             <nav class="nav-links">
                 <a href="index.html">Home</a>
-                <a href="src/pages/decks.html">Decks</a>
-                <a href="src/pages/favorites.html">Favorites</a>
+                <a href="decks.html">Decks</a>
+                <a href="favorites.html">Favorites</a>
             </nav>
         </div>
 
         <div class="account-links">
-            <a href="src/pages/login.html" class="btn-outline">Log In</a>
-            <a href="src/pages/register.html" class="btn-primary">Register</a>
+            <a href="/login" class="btn-outline">Log In</a>
+            <a href="/register" class="btn-primary">Register</a>
         </div>
     </header>
 
@@ -36,8 +36,13 @@
                 <p>Semantic search for Magic The Gathering Cards</p>
                 <form class="search-bar">
                     <input type="text" placeholder="Search for a card...">
+                    <button type="submit">Search</button>
                 </form>
             </div>
+        </section>
+
+        <section>
+            <ul id="results"></ul>
         </section>
 
         <section class="tutorial">
@@ -90,13 +95,13 @@
 
                 <div class="mtg-grid">
                     <div class="mtg-card">
-                        <img src="https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/4/4b/Plains_M21_263.jpg" alt="Land card" />
+                        <img src="" alt="Land card" />
                         <h3>Goal of the Game</h3>
                         <p>Reduce your opponent’s life total from 20 to 0 using creatures, spells, and abilities. Build decks around your favorite playstyles—aggro, control, combo, or midrange.</p>
                     </div>
 
                     <div class="mtg-card">
-                        <img src="https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/d/d1/Lightning_Bolt_M11_146.jpg" alt="Lightning Bolt card" />
+                        <img src="" alt="Lightning Bolt card" />
                         <h3>How to Play</h3>
                         <ul>
                             <li><strong>Setup:</strong> Each player draws 7 cards.</li>
@@ -107,7 +112,7 @@
                     </div>
 
                     <div class="mtg-card">
-                        <img src="https://static.wikia.nocookie.net/mtgsalvation_gamepedia/images/b/b9/Jace_the_Mind_Sculptor_Worldwake.jpg" alt="Planeswalker card" />
+                        <img src="" alt="Planeswalker card" />
                         <h3>Card Types</h3>
                         <p>Every card has a role: <br>
                         <strong>Lands</strong> create mana, <strong>Creatures</strong> attack and defend, <strong>Instants</strong> and <strong>Sorceries</strong> cast spells, <strong>Enchantments</strong> and <strong>Artifacts</strong> give ongoing effects, and <strong>Planeswalkers</strong> represent allies with unique powers.</p>
@@ -132,5 +137,8 @@
         <p>&copy; 2025 Groupe 4 ENSAI 2A. All rights reserved.</p>
     </footer>
 
+    <script src="/static/script.js"></script>
+
 </body>
+
 </html>

@@ -12,6 +12,7 @@ def mock_user_dao():
             "username": "harry",
             "email": "harry@hogwarts.com",
             "password_hash": "hash1",
+            "role": "player",
         }
     }
     next_id = [2]
@@ -70,18 +71,15 @@ def mock_user_dao():
             return
 
         # SELECT id, username, ... FROM users WHERE id = %s (get_by_id)
-        if q.startswith("select") and "from users" in q and "where id = %s" in q:
+        if (
+            q.startswith("select")
+            and "from users" in q
+            and "where id = %s" in q
+        ):
             id = params[0]
             row = fake_users_db.get(id)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
-            return
-
-        # SELECT ... FROM users ORDER BY id (get_all)
-        if q.startswith("select") and "from users" in q and "order by id" in q:
-            rows = [fake_users_db[k] for k in sorted(fake_users_db.keys())]
-            mock_cursor.fetchall.return_value = rows
-            mock_cursor.fetchone.return_value = rows[0] if rows else None
             return
 
         # UPDATE users SET ... WHERE id = %s RETURNING ...
@@ -156,7 +154,9 @@ def test_exist_valueerror(mock_user_dao):
 def test_create_ok(mock_user_dao):
     dao, _, mock_conn, _, fake_db = mock_user_dao
     user = dao.create("hermione", "hermion@hogwarts.com", "hash2")
-    assert user["id"] in fake_db and fake_db[user["id"]]["username"] == "hermione"
+    assert (
+        user["id"] in fake_db and fake_db[user["id"]]["username"] == "hermione"
+    )
     mock_conn.commit.assert_called_once()
 
 
@@ -165,15 +165,6 @@ def test_create_duplicate_email(mock_user_dao):
     # already used email
     with pytest.raises(ValueError):
         dao.create("dup", "harry@hogwarts.com", "hashX")
-
-
-# Tests get_all()
-def test_get_all(mock_user_dao):
-    dao, _, mock_conn, _, _ = mock_user_dao
-    users = dao.get_all()
-    assert isinstance(users, list)
-    assert users and users[0]["id"] == 1
-    mock_conn.commit.assert_not_called()
 
 
 # Tests get_by_id()

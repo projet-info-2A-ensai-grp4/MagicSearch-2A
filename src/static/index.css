@@ -235,7 +235,6 @@ body {
 
 .mtg_game h2 span {
     background: linear-gradient(90deg, #ffcc00, #ff8800);
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

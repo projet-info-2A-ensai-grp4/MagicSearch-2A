@@ -35,7 +35,7 @@ class UserDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT id         "
+                    "SELECT *          "
                     "FROM users        "
                     "WHERE id = %s     "
                     "LIMIT 1           ",
@@ -67,7 +67,7 @@ class UserDao(AbstractDao):
         --------
         new_user: dict
             Dictionary containing the newly created user's information, such as
-            'id', 'username', 'email', 'password_hash' and 'role'.
+            'id', 'username', 'email' and 'password_hash'.
 
         Raises:
         -------
@@ -91,7 +91,6 @@ class UserDao(AbstractDao):
                 )
                 new_user = self.cursor.fetchone()
                 self.conn.commit()
-                new_user["role"] = 1
                 return new_user
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
@@ -99,6 +98,40 @@ class UserDao(AbstractDao):
             raise RuntimeError(f"Unexpected database error: {e}") from e
 
     # READ
+    def get_all(self):
+        """
+        Get every users in the database.
+
+        Returns:
+        --------
+        users_db: list
+            The list of dictionaries containing the users's information, such
+            as 'id', 'username', 'email' and 'password_hash'.
+
+        Raises:
+        -------
+        ConnectionError
+            If the database connection fails.
+        RuntimeError
+            If an unexpected database error occurs.
+        """
+        try:
+            with self:
+                self.cursor.execute(
+                    "SELECT id,              "
+                    "       username,        "
+                    "       email,           "
+                    "       password_hash    "
+                    "FROM users              "
+                    "ORDER BY id             "
+                )
+                users_db = self.cursor.fetchall()
+                return users_db
+        except psycopg2.OperationalError as e:
+            raise ConnectionError(f"Database connection failed: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"Unexpected database error: {e}") from e
+
     def get_by_id(self, id):
         """
         Get a user in the database with its id.
@@ -112,8 +145,8 @@ class UserDao(AbstractDao):
         --------
         user : dict or None
             - Dictionary containing the newly created user's information, such
-              as 'id', 'username', 'email', 'password_hash' and 'role, if the
-              user exists.
+              as 'id', 'username', 'email' and 'password_hash', if the user
+              exists.
             - None if no user with the given id exists in the database.
 
         Raises:
@@ -134,8 +167,7 @@ class UserDao(AbstractDao):
                         "SELECT id,             "
                         "       username,       "
                         "       email,          "
-                        "       password_hash,  "
-                        "       role            "
+                        "       password_hash   "
                         "FROM users             "
                         "WHERE id = %s          ",
                         (id,),
@@ -162,8 +194,8 @@ class UserDao(AbstractDao):
         --------
         user : dict or None
             - Dictionary containing the newly created user's information, such
-              as 'id', 'username', 'email', 'password_hash' and 'role', if the
-              user exists.
+              as 'id', 'username', 'email' and 'password_hash', if the user
+              exists.
             - None if no user with the given id exists in the database.
 
         Raises:
@@ -183,8 +215,7 @@ class UserDao(AbstractDao):
                     "SELECT id,             "
                     "       username,       "
                     "       email,          "
-                    "       password_hash,  "
-                    "       role            "
+                    "       password_hash   "
                     "FROM users             "
                     "WHERE username = %s    ",
                     (username,),
@@ -220,10 +251,10 @@ class UserDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT id             "
+                    "SELECT *              "
                     "FROM users            "
                     "WHERE email = %s      ",
-                    (email),
+                    (email,),
                 )
                 users_db = self.cursor.fetchone()
                 if users_db is None:
@@ -254,7 +285,7 @@ class UserDao(AbstractDao):
         --------
         user : dict
             Dictionary containing the updated user's information, such as 'id',
-            'username', 'email', 'password_hash' and 'role.
+            'username', 'email' and 'password_hash'.
 
         Raises:
         -------
@@ -286,13 +317,12 @@ class UserDao(AbstractDao):
             params.append(id)
             query = (
                 "UPDATE users               "
-                f"SET {', '.join(updates)}  "
+                f"SET {', '.join(updates)}   "
                 "WHERE id = %s              "
                 "RETURNING id,              "
                 "          username,        "
                 "          email,           "
-                "          password_hash,   "
-                "          role             "
+                "          password_hash    "
             )
 
             try:
@@ -322,7 +352,7 @@ class UserDao(AbstractDao):
         --------
         user : dict
             Dictionary containing the deleted user's information, such as 'id',
-            'username', 'email', 'password_hash' and 'role'.
+            'username', 'email' and 'password_hash'.
 
         Raises:
         -------
@@ -345,8 +375,7 @@ class UserDao(AbstractDao):
                         "RETURNING id,             "
                         "          username,       "
                         "          email,          "
-                        "          password_hash,  "
-                        "          role            ",
+                        "          password_hash   ",
                         (id,),
                     )
                     del_user = self.cursor.fetchone()

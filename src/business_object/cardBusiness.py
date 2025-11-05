@@ -33,7 +33,7 @@ class CardBusiness:
         # Core identity - name is the anchor
         parts.append(f"Card: {self.name}")
 
-        # Type line (critical for searching by card type)
+        # # Type line (critical for searching by card type)
         if self.type:
             parts.append(f"Type: {self.type}")
 
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         # print(dao.get_by_id(420))
 
         try:
-            business = CardBusiness(dao, 422)
+            business = CardBusiness(dao, 412)
             business.generate_text_to_embed2()
             print(business.text_to_embed)
             embedding = business.vectorize()

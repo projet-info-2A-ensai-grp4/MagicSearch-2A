@@ -73,7 +73,7 @@ class PlayerDao(UserDao):
                             type,
                             color_identity,
                             mana_cost,
-                            scryfall_oracle_id,
+                            image_url,
                             embedding <-> %s::vector as distance
                         FROM cards
                     """

@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from dao.cardDao import CardDao
 from services.embeddingService import EmbeddingService
 
+
 class CardBusiness:
     def __init__(
         self, dao: CardDao, card_id: int, embedding_service: EmbeddingService = None
@@ -26,7 +27,90 @@ class CardBusiness:
         if not self.id:
             raise ValueError("Impossible to generate text_to_embed without a card ID.")
 
-        text_description = f"This is the description of a Magic The Gathering card, be aware that the description of the card may have some missing values, it is not a problem, it just means the card does not contain that kind of information (for example a spell usually does not have power and life). You know and master the rules of the Magic: The Gathering card game. If you need some explanation of the card, know that the cost is displayed like {{2}}{{R}}{{G}}{{B}}{{W}}{{U}}, which means 2 mana + 1 red + 1 green + 1 blue + 1 white + 1 uncolor, you understand the rest. for your notice {{T}} means to tap the card. Here are the most important caracteristics of a card: its name is {self.name}, its type is {self.type} and its description text is ``{self.text}''. Finally, the card cost is {self.mana_cost}. Logically the total mana value is {self.mana_value}. The power of the card is {self.power} and its toughness is {self.toughness}, its color identity is {self.color_identity}. The card also may have keywords (refer to the mtg rules): {self.keywords}."
+        # Create a rich, natural language description optimized for embedding models
+        parts = []
+
+        # Core identity - name is the anchor
+        parts.append(f"Card: {self.name}")
+
+        # # Type line (critical for searching by card type)
+        if self.type:
+            parts.append(f"Type: {self.type}")
+
+        # Supertypes, types, and subtypes for granular search
+        type_parts = []
+        if self.supertypes:
+            type_parts.append(f"Supertypes: {self.supertypes}")
+        if self.types:
+            type_parts.append(f"Types: {self.types}")
+        if self.subtypes:
+            type_parts.append(f"Subtypes: {self.subtypes}")
+        if type_parts:
+            parts.append(". ".join(type_parts))
+
+        # Mana and cost (important for deck building searches)
+        if self.mana_cost:
+            parts.append(f"Mana cost: {self.mana_cost}")
+        if self.mana_value:
+            parts.append(f"Total mana value: {self.mana_value}")
+
+        # Color information (essential for color identity searches)
+        if self.colors:
+            parts.append(f"Colors: {self.colors}")
+        if self.color_identity:
+            parts.append(f"Color identity: {self.color_identity}")
+        if self.color_indicator:
+            parts.append(f"Color indicator: {self.color_indicator}")
+
+        # Card text - THE MOST IMPORTANT for semantic search
+        if self.text:
+            parts.append(f"Rules text: {self.text}")
+
+        # Combat and game stats
+        stats = []
+        if self.power and self.toughness:
+            stats.append(f"Power/Toughness: {self.power}/{self.toughness}")
+        if self.loyalty:
+            stats.append(f"Loyalty: {self.loyalty}")
+        if self.defense:
+            stats.append(f"Defense: {self.defense}")
+        if stats:
+            parts.append(". ".join(stats))
+
+        # Keywords (crucial for mechanic searches)
+        # Note: Embedding models may not know MTG keyword meanings without context.
+        # Consider fetching keyword rules from Scryfall API or MTG Comprehensive Rules.
+        # For now, we list them to help the model learn associations through usage patterns.
+        if self.keywords:
+            parts.append(f"Keywords: {self.keywords}")
+            # TODO: Enhance with keyword descriptions from a keyword glossary
+            # Example: "Flying (This creature can't be blocked except by creatures with flying or reach)"
+
+        # Format and legality indicators
+        if self.subsets:
+            parts.append(f"Subsets: {self.subsets}")
+
+        # Special properties
+        special = []
+        if self.is_reserved:
+            special.append("Reserved List card")
+        if self.is_funny:
+            special.append("Un-set or funny card")
+        if self.has_alternative_deck_limit:
+            special.append("Alternative deck limit")
+        if special:
+            parts.append(". ".join(special))
+
+        # Layout info for split/flip/transform cards
+        if self.layout and self.layout not in ["normal", "token"]:
+            parts.append(f"Layout: {self.layout}")
+        if self.face_name and self.face_name != self.name:
+            parts.append(f"Other face: {self.face_name}")
+
+        # Join into natural, flowing text
+        text_description = ". ".join(filter(None, parts))
+        if not text_description.endswith("."):
+            text_description += "."
 
         self.text_to_embed = text_description
 
@@ -63,11 +147,12 @@ class CardBusiness:
 
 if __name__ == "__main__":
     with CardDao() as dao:
-        print(dao.get_by_id(420))
+        # print(dao.get_by_id(420))
 
         try:
-            business = CardBusiness(dao, 420)
+            business = CardBusiness(dao, 412)
             business.generate_text_to_embed2()
+            print(business.text_to_embed)
             embedding = business.vectorize()
 
         except ValueError as e:

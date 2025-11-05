@@ -431,7 +431,7 @@ class CardDao(AbstractDao):
         self,
         order_by: str,
         asc: bool = True,
-        limit: int = 100,
+        limit: int = 10,
         offset: int = 0,
         **kwargs,
     ):
@@ -477,40 +477,76 @@ class CardDao(AbstractDao):
         list[dict]
             List of dictionaries representing the cards retrieved from the `cards` table.
         """
-        if not (set(kwargs.keys()).issubset(self.columns_valid)):
-            raise ValueError(
-                f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
-            )
+
+        # Validation des colonnes
+        if not set(k.split("__")[0] for k in kwargs.keys()).issubset(self.columns_valid):
+            invalid = {k.split("__")[0] for k in kwargs.keys()} - self.columns_valid
+            raise ValueError(f"Invalid keys: {invalid}")
         if order_by not in self.columns_valid:
             raise ValueError(f"Invalid order_by: {order_by}")
+
+        # Colonnes PostgreSQL de type ARRAY
+        array_columns = {"colors", "color_identity"}
+
         try:
             with self:
-                base_query = "SELECT * FROM cards WHERE TRUE"
+                base_query = "SELECT * FROM cards"
+                where_clauses = []
                 params = []
-                filters = []
-                for col, vals in kwargs.items():
-                    if vals is not None:
-                        if isinstance(vals, (list, tuple)):
-                            placeholders = ",".join(["%s"] * len(vals))
-                            filters.append(f"{col} IN ({placeholders})")
-                            params.extend(vals)
-                        else:
-                            filters.append(f"{col} = %s")
-                            params.append(vals)
+
+                for raw_col, vals in kwargs.items():
+                    parts = raw_col.split("__")
+                    col = parts[0]
+                    op_suffix = parts[1] if len(parts) > 1 else None
+
+                    # Détermination de l’opérateur SQL
+                    if op_suffix == "lte":
+                        operator = "<="
+                    elif op_suffix == "gte":
+                        operator = ">="
                     else:
-                        filters.append("FALSE")
-                if filters:
-                    base_query += " AND " + " AND ".join(filters)
-                if order_by:
-                    direction = "ASC" if asc else "DESC"
-                    base_query += f" ORDER BY {order_by} {direction}"
+                        operator = "="
+
+                    # Construction des conditions WHERE
+                    if vals is None:
+                        where_clauses.append("FALSE")
+                    elif isinstance(vals, (list, tuple)):
+                        if col in array_columns:
+                            where_clauses.append(f"{col} && %s")
+                            params.append(list(vals))
+                        else:
+                            placeholders = ", ".join(["%s"] * len(vals))
+                            where_clauses.append(f"{col} IN ({placeholders})")
+                            params.extend(vals)
+                    else:
+                        if col in array_columns:
+                            where_clauses.append(f"{col} && %s")
+                            params.append([vals])
+                        else:
+                            where_clauses.append(f"{col} {operator} %s")
+                            params.append(vals)
+
+                # Assemblage de la requête
+                if where_clauses:
+                    base_query += " WHERE " + " AND ".join(where_clauses)
+
+                direction = "ASC" if asc else "DESC"
+                base_query += f" ORDER BY {order_by} {direction}"
+
                 base_query += " LIMIT %s OFFSET %s"
                 params.extend([limit, offset])
+
+                # Debug (optionnel)
+                # print("QUERY:", base_query)
+                # print("PARAMS:", params)
+
                 self.cursor.execute(base_query, params)
                 return self.cursor.fetchall()
+
         except Exception as e:
-            print(f"Error connecting to the database: {e}")
-            exit()
+            print(f"Error executing query: {e}")
+            import sys
+            sys.exit(1)
 
     def faceted_search():
         """Allow multi-filter search across facets like type, set, color"""

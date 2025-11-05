@@ -7,7 +7,7 @@
 
 import psycopg2
 from psycopg2 import sql
-from .abstractDao import AbstractDao
+from dao.abstractDao import AbstractDao
 
 
 class CardDao(AbstractDao):
@@ -568,4 +568,4 @@ class CardDao(AbstractDao):
 
 if __name__ == "__main__":
     with CardDao() as dao:
-        print(dao.get_card_by_id(420))
+        print(dao.get_by_id(32043))

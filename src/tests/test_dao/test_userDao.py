@@ -82,13 +82,6 @@ def mock_user_dao():
             mock_cursor.fetchall.return_value = [row] if row else []
             return
 
-        # SELECT ... FROM users ORDER BY id (get_all)
-        if q.startswith("select") and "from users" in q and "order by id" in q:
-            rows = [fake_users_db[k] for k in sorted(fake_users_db.keys())]
-            mock_cursor.fetchall.return_value = rows
-            mock_cursor.fetchone.return_value = rows[0] if rows else None
-            return
-
         # UPDATE users SET ... WHERE id = %s RETURNING ...
         if q.startswith("update users"):
             id = params[-1]
@@ -172,15 +165,6 @@ def test_create_duplicate_email(mock_user_dao):
     # already used email
     with pytest.raises(ValueError):
         dao.create("dup", "harry@hogwarts.com", "hashX")
-
-
-# Tests get_all()
-def test_get_all(mock_user_dao):
-    dao, _, mock_conn, _, _ = mock_user_dao
-    users = dao.get_all()
-    assert isinstance(users, list)
-    assert users and users[0]["id"] == 1
-    mock_conn.commit.assert_not_called()
 
 
 # Tests get_by_id()

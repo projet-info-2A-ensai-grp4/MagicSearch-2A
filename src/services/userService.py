@@ -71,9 +71,9 @@ class UserService:
             raise ValueError()
         if self.actual_user.get_by_username(self.username) is not None:
             raise ValueError("This username is already used")
-        if not UserDao.new_email(self.email):
+        if not self.actual_user.new_email(self.email):
             raise ValueError("This email is already used")
-        new_user = UserDao.create(
+        new_user = self.actual_user.create(
             self.username, self.email, self.password_hash
         )
         return new_user
@@ -100,7 +100,7 @@ class UserService:
         ValueError :
             If the username does not exist in the database.
         """
-        user = UserDao.get_by_username(self.username)
+        user = self.actual_user.get_by_username(self.username)
         if user is None:
             raise ValueError("This username does not exist")
         if user["password_hash"] != self.password_hash:

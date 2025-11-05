@@ -24,6 +24,26 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        if (username.length < 3) {
+            alert('The username must be at least 3 characters long.')
+            return;
+        }
+
+        if (username.length > 20) {
+            alert('The username cannot exceed 20 characters.')
+            return;
+        }
+        
+        if (!/^[A-Za-z0-9._-]+$/.test(username)) {
+            alert("The username contains unauthorized characters. Only letters, numbers, '-', '_' and '.' are allowed.");
+            return;
+        }
+
+        if (!/^[A-Za-z]/.test(username)) {
+            alert("The username must start with a letter.");
+            return;
+        }
+
         const userData = {
             username: username,
             email: email,

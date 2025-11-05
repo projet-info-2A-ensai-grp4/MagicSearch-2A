@@ -37,7 +37,7 @@ class UserDao(AbstractDao):
                 self.cursor.execute(
                     "SELECT *          "
                     "FROM users        "
-                    "WHERE id = %s     "
+                    "WHERE user_id = %s     "
                     "LIMIT 1           ",
                     (id,),
                 )
@@ -82,13 +82,13 @@ class UserDao(AbstractDao):
                     "INSERT INTO users (username,        "
                     "                   email,           "
                     "                   password_hash,   "
-                    "                   role)            "
-                    "VALUES (%s, %s, %s, 0)             "
-                    "RETURNING id,                       "
+                    "                   role_id)         "
+                    "VALUES (%s, %s, %s, 0)              "
+                    "RETURNING user_id,                       "
                     "          username,                 "
                     "          email,                    "
                     "          password_hash,            "
-                    "          role                      ",
+                    "          role_id                   ",
                     (username, email, password_hash,),
                 )
                 new_user = self.cursor.fetchone()
@@ -132,13 +132,13 @@ class UserDao(AbstractDao):
             try:
                 with self:
                     self.cursor.execute(
-                        "SELECT id,             "
+                        "SELECT user_id,             "
                         "       username,       "
                         "       email,          "
                         "       password_hash,  "
-                        "       role            "
+                        "       role_id         "
                         "FROM users             "
-                        "WHERE id = %s          ",
+                        "WHERE user_id = %s          ",
                         (id,),
                     )
                     user = self.cursor.fetchone()
@@ -181,11 +181,11 @@ class UserDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT id,             "
+                    "SELECT user_id,             "
                     "       username,       "
                     "       email,          "
                     "       password_hash,  "
-                    "       role            "
+                    "       role_id         "
                     "FROM users             "
                     "WHERE username = %s    ",
                     (username,),
@@ -288,12 +288,12 @@ class UserDao(AbstractDao):
             query = (
                 "UPDATE users               "
                 f"SET {', '.join(updates)}   "
-                "WHERE id = %s              "
-                "RETURNING id,              "
+                "WHERE user_id = %s              "
+                "RETURNING user_id,              "
                 "          username,        "
                 "          email,           "
                 "          password_hash,   "
-                "          role             "
+                "          role_id          "
             )
 
             try:
@@ -342,12 +342,12 @@ class UserDao(AbstractDao):
                 with self:
                     self.cursor.execute(
                         "DELETE FROM users         "
-                        "WHERE id = %s             "
-                        "RETURNING id,             "
+                        "WHERE user_id = %s        "
+                        "RETURNING user_id,             "
                         "          username,       "
                         "          email,          "
-                        "          password_hash,   "
-                        "          role            ",
+                        "          password_hash,  "
+                        "          role_id         ",
                         (id,),
                     )
                     del_user = self.cursor.fetchone()

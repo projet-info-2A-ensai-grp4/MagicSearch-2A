@@ -8,11 +8,11 @@ def mock_user_dao():
     # Fake database to test userDao
     fake_users_db = {
         1: {
-            "id": 1,
+            "user_id": 1,
             "username": "harry",
             "email": "harry@hogwarts.com",
             "password_hash": "hash1",
-            "role": 0
+            "role_id": 0
         }
     }
     next_id = [2]
@@ -42,63 +42,63 @@ def mock_user_dao():
             new_id = next_id[0]
             next_id[0] += 1
             fake_users_db[new_id] = {
-                "id": new_id,
+                "user_id": new_id,
                 "username": username,
                 "email": email,
                 "password_hash": pwd,
-                "role": 0,
+                "role_id": 0,
             }
             mock_cursor.fetchone.return_value = fake_users_db[new_id]
             mock_cursor.fetchall.return_value = [fake_users_db[new_id]]
             return
 
-        # SELECT ... WHERE id = %s LIMIT 1  (exist)
+        # SELECT ... WHERE user_id = %s LIMIT 1  (exist)
         if (
             q.startswith("select")
             and "from users" in q
-            and "where id = %s" in q
+            and "where user_id = %s" in q
             and "limit 1" in q
         ):
-            id = params[0]
-            row = fake_users_db.get(id)
+            user_id = params[0]
+            row = fake_users_db.get(user_id)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
 
-        # SELECT ... WHERE id = %s (get_by_id)
-        if q.startswith("select") and "from users" in q and "where id = %s" in q:
-            id = params[0]
-            row = fake_users_db.get(id)
+        # SELECT ... WHERE user_id = %s (get_by_id)
+        if q.startswith("select") and "from users" in q and "where user_id = %s" in q:
+            user_id = params[0]
+            row = fake_users_db.get(user_id)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
 
         # SELECT ... WHERE username = %s (get_by_username)
-        if q.startswith("select") and "from users" in q and "where id = %s" in q:
-            id = params[0]
-            row = fake_users_db.get(id)
+        if q.startswith("select") and "from users" in q and "where username = %s" in q:
+            username = params[0]
+            row = fake_users_db.get(username)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
 
         # SELECT ... WHERE email = %s (new_email)
-        if q.startswith("select") and "from users" in q and "where id = %s" in q:
-            id = params[0]
-            row = fake_users_db.get(id)
+        if q.startswith("select") and "from users" in q and "where email = %s" in q:
+            email = params[0]
+            row = fake_users_db.get(email)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
 
         # UPDATE users SET ...
         if q.startswith("update users"):
-            id = params[-1]
-            if id not in fake_users_db:
+            user_id = params[-1]
+            if user_id not in fake_users_db:
                 mock_cursor.fetchone.return_value = None
                 return
             updates_part = q.split("set")[1].split("where")[0]
             assignments = [a.strip() for a in updates_part.split(",")]
             values = params[:-1]
-            record = fake_users_db[id].copy()
+            record = fake_users_db[user_id].copy()
             i = 0
             for a in assignments:
                 if a.startswith("username = %s"):
@@ -110,15 +110,15 @@ def mock_user_dao():
                 elif a.startswith("password_hash = %s"):
                     record["password_hash"] = values[i]
                     i += 1
-            fake_users_db[id] = record
+            fake_users_db[user_id] = record
             mock_cursor.fetchone.return_value = record
             mock_cursor.fetchall.return_value = [record]
             return
 
         # DELETE FROM users ...
         if q.startswith("delete from users"):
-            id = params[0]
-            row = fake_users_db.pop(id, None)
+            user_id = params[0]
+            row = fake_users_db.pop(user_id, None)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
@@ -163,8 +163,8 @@ def test_exist_valueerror(mock_user_dao):
 def test_create_ok(mock_user_dao):
     dao, _, mock_conn, _, fake_db = mock_user_dao
     user = dao.create("hermione", "hermione@hogwarts.com", "hash2")
-    assert user["id"] in fake_db
-    assert fake_db[user["id"]]["username"] == "hermione"
+    assert user["user_id"] in fake_db
+    assert fake_db[user["user_id"]]["username"] == "hermione"
     mock_conn.commit.assert_called_once()
 
 
@@ -185,6 +185,18 @@ def test_get_by_id_typeerror(mock_user_dao):
     dao, *_ = mock_user_dao
     with pytest.raises(TypeError):
         dao.get_by_id("x")
+
+
+# get_by_username()
+def test_get_by_username_found(mock_user_dao):
+    dao, _, mock_conn, _, _ = mock_user_dao
+    user = dao.get_by_username("harry")
+    assert user["user_id"] == 1
+    mock_conn.commit.assert_not_called()
+
+def test_get_by_username_not_found(mock_user_dao):
+    dao, *_ = mock_user_dao
+    assert dao.get_by_username("hermione") is None
 
 
 # update()
@@ -212,7 +224,7 @@ def test_update_invalid_id(mock_user_dao):
 def test_delete_found(mock_user_dao):
     dao, _, mock_conn, _, fake_db = mock_user_dao
     res = dao.delete(1)
-    assert res and res["id"] == 1
+    assert res and res["user_id"] == 1
     assert 1 not in fake_db
     mock_conn.commit.assert_called_once()
 

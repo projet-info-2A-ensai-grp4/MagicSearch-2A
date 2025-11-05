@@ -157,6 +157,32 @@ EOF
 
 gum style --foreground 82 "✓ .env file created in project root"
 
+# Enable pgvector extension
+echo ""
+gum style --foreground 147 "📐 Enabling pgvector extension..."
+
+export PGPASSWORD="$DB_PASSWORD"
+if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS vector;" 2>&1 | tee /tmp/pgvector.log; then
+    gum style --foreground 82 "✓ pgvector extension enabled!"
+else
+    gum style --foreground 196 "❌ Failed to enable pgvector extension"
+    echo ""
+    gum style --foreground 220 "⚠️  You may need to install pgvector first:"
+    echo ""
+    gum style --foreground 246 "Ubuntu/Debian:"
+    gum style --foreground 246 "  sudo apt install postgresql-<version>-pgvector"
+    echo ""
+    gum style --foreground 246 "Or compile from source:"
+    gum style --foreground 246 "  git clone https://github.com/pgvector/pgvector.git"
+    gum style --foreground 246 "  cd pgvector && make && sudo make install"
+    echo ""
+    cat /tmp/pgvector.log
+    if ! gum confirm "Continue without pgvector? (embeddings won't work)"; then
+        exit 1
+    fi
+fi
+unset PGPASSWORD
+
 # ============================================================================
 # STEP 4: Card Data Setup
 # ============================================================================
@@ -351,13 +377,92 @@ rm "$INIT_SCRIPT"
 
 # Initialize other tables
 echo ""
+gum style --foreground 147 "🔨 Creating other tables..."
+
+# Create temporary script for other tables
+OTHER_TABLES_SCRIPT="$PROJECT_ROOT/src/utils/automatic_setup/init_other_tables_temp.py"
+
+cat > "$OTHER_TABLES_SCRIPT" << 'EOFPYTHON'
+import sys
+import os
+
+# Add project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
+from src.utils.automatic_setup.dbConnection import dbConnection
+
+with dbConnection() as conn:
+    with conn.cursor() as cur:
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS roles (
+            role_id SERIAL PRIMARY KEY,
+            role_name VARCHAR(50) NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+            user_id SERIAL PRIMARY KEY,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            email VARCHAR(150) NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role_id INT NOT NULL,
+            FOREIGN KEY (role_id) REFERENCES roles(role_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS decks (
+            deck_id SERIAL PRIMARY KEY,
+            user_id INT NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            type VARCHAR(100),
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS deck_cards (
+            deck_id INT NOT NULL,
+            card_id INT NOT NULL,
+            quantity INT DEFAULT 1,
+            FOREIGN KEY (deck_id) REFERENCES decks(deck_id),
+            FOREIGN KEY (card_id) REFERENCES cards(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS user_deck_link (
+            user_id INT NOT NULL,
+            deck_id INT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(user_id),
+            FOREIGN KEY (deck_id) REFERENCES decks(deck_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS favorites (
+            id SERIAL PRIMARY KEY,
+            user_id INT NOT NULL,
+            card_id INT NOT NULL,
+            added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (user_id, card_id),
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+            FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS histories (
+            history_id SERIAL PRIMARY KEY,
+            user_id INT NOT NULL,
+            prompt TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        );
+        """)
+    conn.commit()
+
+print("✓ All tables created successfully")
+EOFPYTHON
+
 if gum spin --spinner dot --title "Creating other tables..." -- \
-    python3 src/utils/automatic_setup/init_other_tables.py 2>&1; then
+    python3 "$OTHER_TABLES_SCRIPT" 2>&1 | tee /tmp/init_other_tables.log; then
     gum style --foreground 82 "✓ All tables created successfully!"
 else
     gum style --foreground 196 "❌ Failed to initialize other tables"
+    cat /tmp/init_other_tables.log
     exit 1
 fi
+
+rm "$OTHER_TABLES_SCRIPT"
 
 sleep 1
 
@@ -370,63 +475,69 @@ gum style --border rounded --border-foreground 212 --padding "1 2" --margin "1 0
     "$(gum style --foreground 212 '✨ Step 5: Optional Enhancements')"
 
 echo ""
-gum style --foreground 147 "Choose what you want to set up:"
+gum style --foreground 147 "Choose what you want to set up (use Space to select, Enter to confirm):"
 echo ""
 
-ENHANCEMENTS=$(gum choose --no-limit "Download card images" "Generate embeddings" "Skip enhancements")
+ENHANCEMENTS=$(gum choose --no-limit "Download card images" "Generate embeddings")
 
-# Download images
-if echo "$ENHANCEMENTS" | grep -q "Download card images"; then
-    echo ""
-    gum style --foreground 147 "🖼️  Starting image download process..."
-    gum style --foreground 246 "This will fetch card images from Scryfall API"
-    echo ""
-    
-    cd src/utils/automatic_setup
-    if gum spin --spinner dot --title "Downloading images (this may take a while)..." -- \
-        python3 add_img.py 2>&1 | tee /tmp/add_img.log; then
-        cd "$PROJECT_ROOT"
-        gum style --foreground 82 "✓ Image download complete!"
-    else
-        cd "$PROJECT_ROOT"
-        gum style --foreground 220 "⚠️  Image download encountered issues"
-        gum style --foreground 246 "You can resume later by running: python3 src/utils/automatic_setup/add_img.py"
-    fi
-fi
-
-# Generate embeddings
-if echo "$ENHANCEMENTS" | grep -q "Generate embeddings"; then
-    echo ""
-    gum style --foreground 147 "🧠 Setting up embeddings..."
-    echo ""
-    
-    gum style --foreground 147 "Please enter your SSPCloud API key:"
-    LLM_API_KEY=$(gum input --placeholder "API Key" --password)
-    
-    # Add to .env
-    echo "LLM_API_KEY=$LLM_API_KEY" >> .env
-    
-    gum style --foreground 82 "✓ API key saved to .env"
-    echo ""
-    
-    gum style --foreground 147 "🚀 Starting embedding generation..."
-    gum style --foreground 246 "This will take a significant amount of time"
-    echo ""
-    
-    cd src/utils/automatic_setup
-    if gum confirm "Start embedding process now?"; then
-        if gum spin --spinner dot --title "Generating embeddings..." -- \
-            python3 vectorize.py 2>&1 | tee /tmp/vectorize.log; then
+# Check if user selected nothing
+if [ -z "$ENHANCEMENTS" ]; then
+    gum style --foreground 246 "⏭️  Skipping enhancements"
+    sleep 1
+else
+    # Download images
+    if echo "$ENHANCEMENTS" | grep -q "Download card images"; then
+        echo ""
+        gum style --foreground 147 "🖼️  Starting image download process..."
+        gum style --foreground 246 "This will fetch card images from Scryfall API"
+        echo ""
+        
+        cd src/utils/automatic_setup
+        if gum spin --spinner dot --title "Downloading images (this may take a while)..." -- \
+            python3 add_img.py 2>&1 | tee /tmp/add_img.log; then
             cd "$PROJECT_ROOT"
-            gum style --foreground 82 "✓ Embeddings generated successfully!"
+            gum style --foreground 82 "✓ Image download complete!"
         else
             cd "$PROJECT_ROOT"
-            gum style --foreground 220 "⚠️  Embedding generation interrupted or failed"
-            gum style --foreground 246 "You can resume later by running: python3 src/utils/automatic_setup/vectorize.py"
+            gum style --foreground 220 "⚠️  Image download encountered issues"
+            gum style --foreground 246 "You can resume later by running: python3 src/utils/automatic_setup/add_img.py"
         fi
-    else
-        cd "$PROJECT_ROOT"
-        gum style --foreground 246 "Skipped. Run later with: python3 src/utils/automatic_setup/vectorize.py"
+    fi
+
+    # Generate embeddings
+    if echo "$ENHANCEMENTS" | grep -q "Generate embeddings"; then
+        echo ""
+        gum style --foreground 147 "🧠 Setting up embeddings..."
+        echo ""
+        
+        gum style --foreground 147 "Please enter your SSPCloud API key:"
+        LLM_API_KEY=$(gum input --placeholder "API Key" --password)
+        
+        # Add to .env
+        echo "LLM_API_KEY=$LLM_API_KEY" >> .env
+        
+        gum style --foreground 82 "✓ API key saved to .env"
+        echo ""
+        
+        gum style --foreground 147 "🚀 Starting embedding generation..."
+        gum style --foreground 246 "This will take a significant amount of time"
+        echo ""
+        
+        cd src/utils/automatic_setup
+        if gum confirm "Start embedding process now?"; then
+            if gum spin --spinner dot --title "Generating embeddings..." -- \
+                python3 vectorize.py 2>&1 | tee /tmp/vectorize.log; then
+                cd "$PROJECT_ROOT"
+                gum style --foreground 82 "✓ Embeddings generated successfully!"
+            else
+                cd "$PROJECT_ROOT"
+                gum style --foreground 220 "⚠️  Embedding generation interrupted or failed"
+                gum style --foreground 246 "You can resume later by running: python3 src/utils/automatic_setup/vectorize.py"
+            fi
+        else
+            cd "$PROJECT_ROOT"
+            gum style --foreground 246 "Skipped. Run later with: python3 src/utils/automatic_setup/vectorize.py"
+        fi
     fi
 fi
 

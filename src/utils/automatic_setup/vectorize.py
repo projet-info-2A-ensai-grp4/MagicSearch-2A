@@ -1,7 +1,12 @@
-from dao.cardDao import CardDao
-from business_object.cardBusiness import CardBusiness
-from dotenv import load_dotenv
+import sys
 import os
+
+# Add project root to path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
+from src.dao.cardDao import CardDao
+from src.business_object.cardBusiness import CardBusiness
+from dotenv import load_dotenv
 import time
 
 PROGRESS_FILE = ".embed_progress"
@@ -25,7 +30,6 @@ def process_all_cards(max_card_id=32548):
     """Process all cards with resume capability."""
     load_dotenv()
     api_key = os.getenv("LLM_API_KEY")
-    endpoint_url = "https://llm.lab.sspcloud.fr/ollama/api/embed"
 
     if not api_key:
         print("❌ LLM_API_KEY not found in .env file!")
@@ -48,14 +52,19 @@ def process_all_cards(max_card_id=32548):
                             f"📈 Progress: {progress:.1f}% (Card {card_id}/{max_card_id})"
                         )
 
+                    # Create business object and generate text to embed
                     business = CardBusiness(dao, card_id)
+
+                    # Generate the text_to_embed first
                     business.generate_text_to_embed2()
-                    business.vectorize(business.text_to_embed, endpoint_url, api_key)
+
+                    # Then vectorize it (no need to pass text since it uses self.text_to_embed)
+                    business.vectorize()
 
                     save_progress(card_id)
 
-                    # Rate limiting
-                    time.sleep(0.5)
+                    # Rate limiting to avoid API throttling
+                    time.sleep(0.1)
 
                 except ValueError as e:
                     print(f"⚠️  Error processing card {card_id}: {e}")

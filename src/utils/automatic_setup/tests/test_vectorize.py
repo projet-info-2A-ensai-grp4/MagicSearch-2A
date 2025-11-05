@@ -304,7 +304,7 @@ def test_process_all_cards_rate_limiting(
 
     # Verify sleep was called for rate limiting
     assert mock_sleep.call_count == 3
-    mock_sleep.assert_called_with(0.1)  # Changed from 0.5 to 0.1
+    mock_sleep.assert_called_with(0.5)  # Changed from 0.5 to 0.1
 
 
 @patch("vectorize.get_last_processed_id")

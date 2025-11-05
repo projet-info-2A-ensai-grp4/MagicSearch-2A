@@ -25,7 +25,9 @@ Victor Jean
 
 ### Nom Prénom élève 4
 Lina Louati
-- [x] mise à jour de la doc (diagramme de classe, de tables...)
+- [x] update of the documentation (class diagram,table diagram...)
+- [x] card image through url function + tests (API Scryfall)
+- [x] start of table of contents for the final report
 
 
 ### Nom Prénom élève 5
@@ -41,7 +43,7 @@ Charles Ozeel
 - [ ] FastAPI endpoints
 
 ### Secondaires
-- [ ] Récupérer les images des cartes (API Scryfall)
+- [x] Récupérer les images des cartes (API Scryfall)
 - [ ] Moteur de recherche qui différencie logique (coût d'une carte) et semantic search
 - [ ] Interface graphique (à voir ce que l'on fait)
 

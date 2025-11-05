@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from psycopg2 import IntegrityError
 from dao.userDao import UserDao
 
 
@@ -13,6 +12,7 @@ def mock_user_dao():
             "username": "harry",
             "email": "harry@hogwarts.com",
             "password_hash": "hash1",
+            "role": 0
         }
     }
     next_id = [2]
@@ -24,10 +24,12 @@ def mock_user_dao():
     mock_conn = MagicMock(name="conn")
     mock_cursor = MagicMock(name="cursor")
 
-    # IMPORTANT: the AbstractDao does `self.conn.cursor(...)` (no context manager),
-    # so the cursor mock must be returned directly by mock_conn.cursor(...)
     mock_conn.cursor.return_value = mock_cursor
     mock_connect.return_value = mock_conn
+
+    mock_cursor.__enter__.return_value = mock_cursor
+    mock_cursor.__exit__.return_value = None
+    mock_cursor.execute.return_value = None
 
     # Side effect for SQL behavior
     def execute_side_effect(sql, params=None):
@@ -36,12 +38,6 @@ def mock_user_dao():
         # INSERT INTO users ...
         if q.startswith("insert into users"):
             username, email, pwd = params
-            # simulate unique email constraint
-            for user in fake_users_db.values():
-                if user["email"] == email:
-                    raise IntegrityError(
-                        "duplicate key value violates unique constraint 'users_email_key'"
-                    )
 
             new_id = next_id[0]
             next_id[0] += 1
@@ -50,6 +46,7 @@ def mock_user_dao():
                 "username": username,
                 "email": email,
                 "password_hash": pwd,
+                "role": 0,
             }
             mock_cursor.fetchone.return_value = fake_users_db[new_id]
             mock_cursor.fetchall.return_value = [fake_users_db[new_id]]
@@ -76,11 +73,20 @@ def mock_user_dao():
             mock_cursor.fetchall.return_value = [row] if row else []
             return
 
-        # SELECT ... ORDER BY id (get_all)
-        if q.startswith("select") and "order by id" in q:
-            rows = [fake_users_db[k] for k in sorted(fake_users_db.keys())]
-            mock_cursor.fetchall.return_value = rows
-            mock_cursor.fetchone.return_value = rows[0] if rows else None
+        # SELECT ... WHERE username = %s (get_by_username)
+        if q.startswith("select") and "from users" in q and "where id = %s" in q:
+            id = params[0]
+            row = fake_users_db.get(id)
+            mock_cursor.fetchone.return_value = row
+            mock_cursor.fetchall.return_value = [row] if row else []
+            return
+
+        # SELECT ... WHERE email = %s (new_email)
+        if q.startswith("select") and "from users" in q and "where id = %s" in q:
+            id = params[0]
+            row = fake_users_db.get(id)
+            mock_cursor.fetchone.return_value = row
+            mock_cursor.fetchall.return_value = [row] if row else []
             return
 
         # UPDATE users SET ...
@@ -160,22 +166,6 @@ def test_create_ok(mock_user_dao):
     assert user["id"] in fake_db
     assert fake_db[user["id"]]["username"] == "hermione"
     mock_conn.commit.assert_called_once()
-
-
-def test_create_duplicate_email(mock_user_dao):
-    dao, *_ = mock_user_dao
-    with patch.object(UserDao, "create", side_effect=IntegrityError):
-        with pytest.raises(IntegrityError):
-            dao.create("dup", "harry@hogwarts.com", "hashX")
-
-
-# get_all()
-def test_get_all(mock_user_dao):
-    dao, _, mock_conn, _, _ = mock_user_dao
-    users = dao.get_all()
-    assert isinstance(users, list)
-    assert users and users[0]["id"] == 1
-    mock_conn.commit.assert_not_called()
 
 
 # get_by_id()

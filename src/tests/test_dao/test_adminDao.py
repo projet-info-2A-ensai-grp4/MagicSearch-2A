@@ -12,17 +12,16 @@ def mock_user_dao():
             "username": "harry",
             "email": "harry@hogwarts.com",
             "password_hash": "hash1",
-            "role": "player",
         }
     }
     # Mocks connect/conn/cursor
-    patcher = patch("dao.userDao.psycopg2.connect")
+    patcher = patch("dao.adminDao.psycopg2.connect")
     mock_connect = patcher.start()
 
     mock_conn = MagicMock(name="conn")
     mock_cursor = MagicMock(name="cursor")
 
-    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_conn.cursor.return_value = mock_cursor
     mock_connect.return_value = mock_conn
 
     # Side_effect

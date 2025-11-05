@@ -4,6 +4,7 @@ from business_object.cardBusiness import CardBusiness
 from dao.cardDao import CardDao
 from services.embeddingService import EmbeddingService
 
+
 def create_mock_card_data(card_id=1, **overrides):
     """Helper function to create complete mock card data with all attributes."""
     default_data = {

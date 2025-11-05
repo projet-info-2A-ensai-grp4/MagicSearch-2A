@@ -1,0 +1,10 @@
+psycopg2
+requests
+pytest
+python-dotenv
+requests-mock
+jason
+pgvector
+uvicorn
+fastapi
+httpx

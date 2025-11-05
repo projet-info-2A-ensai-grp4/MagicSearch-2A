@@ -76,7 +76,7 @@ def mock_user_dao():
         # SELECT ... WHERE username = %s (get_by_username)
         if q.startswith("select") and "from users" in q and "where username = %s" in q:
             username = params[0]
-            row = fake_users_db.get(username)
+            row = next((u for u in fake_users_db.values() if u["username"] == username), None)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
@@ -84,7 +84,7 @@ def mock_user_dao():
         # SELECT ... WHERE email = %s (new_email)
         if q.startswith("select") and "from users" in q and "where email = %s" in q:
             email = params[0]
-            row = fake_users_db.get(email)
+            row = next((u for u in fake_users_db.values() if u["email"] == email), None)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
@@ -194,9 +194,21 @@ def test_get_by_username_found(mock_user_dao):
     assert user["user_id"] == 1
     mock_conn.commit.assert_not_called()
 
+
 def test_get_by_username_not_found(mock_user_dao):
     dao, *_ = mock_user_dao
     assert dao.get_by_username("hermione") is None
+
+
+# new_email()
+def test_new_email_false(mock_user_dao):
+    dao, _, mock_conn, _, _ = mock_user_dao
+    assert dao.new_email("harry@hogwarts.com") is False
+
+
+def test_new_email_true(mock_user_dao):
+    dao, _, mock_conn, _, _ = mock_user_dao
+    assert dao.new_email("ron@hogwarts.com") is True
 
 
 # update()

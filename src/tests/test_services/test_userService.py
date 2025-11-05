@@ -1,6 +1,7 @@
 import pytest
-
 from services.userService import UserService
+from types import SimpleNamespace
+from unittest.mock import MagicMock, call
 
 
 # Tests valid_username()
@@ -62,6 +63,3 @@ def test_valid_username_begin():
         ValueError, match="The username has to begin with a letter"
     ):
         user2.valid_username()
-
-
-# Tests signUp()

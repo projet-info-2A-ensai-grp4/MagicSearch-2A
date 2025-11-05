@@ -74,17 +74,17 @@ def mock_user_dao():
             return
 
         # SELECT ... WHERE username = %s (get_by_username)
-        if q.startswith("select") and "from users" in q and "where user_id = %s" in q:
-            id = params[0]
-            row = fake_users_db.get(id)
+        if q.startswith("select") and "from users" in q and "where username = %s" in q:
+            username = params[1]
+            row = fake_users_db.get(username)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return
 
         # SELECT ... WHERE email = %s (new_email)
-        if q.startswith("select") and "from users" in q and "where id = %s" in q:
-            id = params[0]
-            row = fake_users_db.get(id)
+        if q.startswith("select") and "from users" in q and "where email = %s" in q:
+            email = params[2]
+            row = fake_users_db.get(email)
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return

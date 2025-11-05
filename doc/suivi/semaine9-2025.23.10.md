@@ -24,7 +24,7 @@ Victor Jean
 
 ### Nom Prénom élève 4
 Lina Louati
-- ras
+- tests for generate text to embed functions
 
 
 ### Nom Prénom élève 5

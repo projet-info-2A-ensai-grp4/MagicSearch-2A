@@ -51,7 +51,7 @@ class CardDao(AbstractDao):
         "scryfall_oracle_id",
         "text_to_embed",
         "embedding",
-        "image_url"
+        "image_url",
         "raw",
     }
 

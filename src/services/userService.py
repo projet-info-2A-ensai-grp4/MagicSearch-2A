@@ -29,7 +29,8 @@ class UserService:
         ------
         ValueError
             If the username is empty, has less than 3 or more than 20
-            characters, does not start with a letter.
+            characters, does not start with a letter or uses unauthorized
+            characters.
         """
         if self.username is None:
             raise ValueError("The username cannot be empty")

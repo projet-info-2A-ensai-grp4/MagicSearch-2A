@@ -16,16 +16,16 @@ classDiagram
         + exist(id)
         + create(username, email, password_hash)
         + get_by_id(id)
+        + get_by_username(username)
+        + new_email(email)
         + update(id, username, email, password_hash)
         + delete(id)
-        + signIn()
-        + signUp()
     }
 
     class PlayerDao{
         - __init__(embedding_service)
-        + filter_cards
-        + searchCards(query, filters, limit)
+        + natural_language_search(query, filters, limit)
+        + get_card_embedding(card_id)
     }
 
     class AdminDao{
@@ -67,6 +67,13 @@ classDiagram
         + vectorize(text)
     }
 
+    class UserService{
+        - __init__(username, email, password_hash)
+        + valid_username()
+        + signUp()
+        + signIn()
+    }
+
 
 %% === Utils Layer ===
     class dbConnection{
@@ -84,4 +91,5 @@ AbstractDao <|-- CardDao
 dbConnection <.. AbstractDao
 AbstractDao <|.. UserDao
 UserBusiness <..> UserDao
+UserDao <.. UserService
 ```

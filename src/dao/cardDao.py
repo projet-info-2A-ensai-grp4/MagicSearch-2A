@@ -480,7 +480,9 @@ class CardDao(AbstractDao):
         """
 
         # Validation des colonnes
-        if not set(k.split("__")[0] for k in kwargs.keys()).issubset(self.columns_valid):
+        if not set(k.split("__")[0] for k in kwargs.keys()).issubset(
+            self.columns_valid
+        ):
             invalid = {k.split("__")[0] for k in kwargs.keys()} - self.columns_valid
             raise ValueError(f"Invalid keys: {invalid}")
         if order_by not in self.columns_valid:
@@ -547,6 +549,7 @@ class CardDao(AbstractDao):
         except Exception as e:
             print(f"Error executing query: {e}")
             import sys
+
             sys.exit(1)
 
     def faceted_search():

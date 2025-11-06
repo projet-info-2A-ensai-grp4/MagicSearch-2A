@@ -16,11 +16,30 @@ NC='\033[0m' # No Color
 cd "$(dirname "$0")/../../.."
 PROJECT_ROOT=$(pwd)
 
-echo -e "${MAGENTA}"
-echo "╔════════════════════════════════════════╗"
-echo "║     🎴 MagicSearch Setup Wizard 🎴     ║"
-echo "╔════════════════════════════════════════╗"
-echo -e "${NC}"
+gum style \
+    --border double \
+    --border-foreground 212 \
+    --padding "1 2" \
+    --margin "1 0" \
+    --align center \
+    "$(gum style --foreground 212 --bold '🎴 MagicSearch Setup Wizard 🎴')"
+
+# --- Add PYTHONPATH for this session (and optionally persist to ~/.bashrc) ---
+export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
+
+echo ""
+gum style --foreground 147 "PYTHONPATH set for this session: ${PYTHONPATH}"
+
+if gum confirm "Add PYTHONPATH=\"$PROJECT_ROOT/src\" to your ~/.bashrc for future sessions?"; then
+    # avoid duplicate entries
+    if ! grep -Fqx "export PYTHONPATH=\"$PROJECT_ROOT/src:\$PYTHONPATH\"" ~/.bashrc 2>/dev/null; then
+        printf "\n# MagicSearch PYTHONPATH\nexport PYTHONPATH=\"$PROJECT_ROOT/src:\$PYTHONPATH\"\n" >> ~/.bashrc
+        gum style --foreground 82 "✓ PYTHONPATH added to ~/.bashrc"
+    else
+        gum style --foreground 246 "PYTHONPATH already present in ~/.bashrc"
+    fi
+fi
+
 
 # ============================================================================
 # STEP 1: Check Dependencies

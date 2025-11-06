@@ -89,7 +89,11 @@ class UserDao(AbstractDao):
                     "          email,                    "
                     "          password_hash,            "
                     "          role_id                   ",
-                    (username, email, password_hash,),
+                    (
+                        username,
+                        email,
+                        password_hash,
+                    ),
                 )
                 new_user = self.cursor.fetchone()
                 self.conn.commit()
@@ -144,9 +148,7 @@ class UserDao(AbstractDao):
                     user = self.cursor.fetchone()
                 return user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(
-                    f"Database connection failed: {e}"
-                ) from e
+                raise ConnectionError(f"Database connection failed: {e}") from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
 
@@ -281,9 +283,7 @@ class UserDao(AbstractDao):
                 updates.append("password_hash = %s")
                 params.append(password_hash)
             if not updates:
-                raise ValueError(
-                    "At least one field to update must be provided"
-                )
+                raise ValueError("At least one field to update must be provided")
             params.append(id)
             query = (
                 "UPDATE users               "
@@ -303,9 +303,7 @@ class UserDao(AbstractDao):
                     self.conn.commit()
                     return updated_user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(
-                    f"Database connection failed: {e}"
-                ) from e
+                raise ConnectionError(f"Database connection failed: {e}") from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
 
@@ -354,9 +352,7 @@ class UserDao(AbstractDao):
                     self.conn.commit()
                     return del_user
             except psycopg2.OperationalError as e:
-                raise ConnectionError(
-                    f"Database connection failed: {e}"
-                ) from e
+                raise ConnectionError(f"Database connection failed: {e}") from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
             finally:

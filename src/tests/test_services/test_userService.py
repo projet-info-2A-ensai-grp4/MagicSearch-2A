@@ -1,6 +1,7 @@
 import pytest
-
 from services.userService import UserService
+from types import SimpleNamespace
+from unittest.mock import MagicMock, call
 
 
 # Tests valid_username()
@@ -54,14 +55,7 @@ def test_valid_username_symbol():
 def test_valid_username_begin():
     user1 = UserService("25bruce", "brucewayne@gotham.com", "abc")
     user2 = UserService("-bruce", "brucewayne@gotham.com", "abc")
-    with pytest.raises(
-        ValueError, match="The username has to begin with a letter"
-    ):
+    with pytest.raises(ValueError, match="The username has to begin with a letter"):
         user1.valid_username()
-    with pytest.raises(
-        ValueError, match="The username has to begin with a letter"
-    ):
+    with pytest.raises(ValueError, match="The username has to begin with a letter"):
         user2.valid_username()
-
-
-# Tests signUp()

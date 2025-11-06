@@ -72,7 +72,6 @@ async def search(query: Query):
 @app.post("/filter")
 async def filter(query: CardFilterQuery):
     try:
-
         filter_kwargs = {}
         if query.colors:
             filter_kwargs["colors"] = query.colors
@@ -83,7 +82,8 @@ async def filter(query: CardFilterQuery):
         if query.mana_value__lte:
             filter_kwargs["mana_value__lte"] = query.mana_value__lte
         results = card_dao.filter(
-            query.order_by, query.asc, query.limit, query.offset, **filter_kwargs)
+            query.order_by, query.asc, query.limit, query.offset, **filter_kwargs
+        )
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /search : {e}")
@@ -98,9 +98,7 @@ async def register(user_data: UserRegistration):
     try:
         password_hash = hashlib.sha256(user_data.password.encode()).hexdigest()
 
-        user_service = UserService(user_data.username,
-                                   user_data.email,
-                                   password_hash)
+        user_service = UserService(user_data.username, user_data.email, password_hash)
 
         new_user = user_service.signUp()
 
@@ -109,8 +107,8 @@ async def register(user_data: UserRegistration):
             "user": {
                 "id": new_user["id"],
                 "username": new_user["username"],
-                "email": new_user["email"]
-            }
+                "email": new_user["email"],
+            },
         }
     except ValueError as e:
         error_message = str(e)

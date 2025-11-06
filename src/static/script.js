@@ -201,6 +201,20 @@ function displayResults(data) {
         : card.name;
       info.className = "card-info";
 
+      // Add favorite button (only if user is logged in)
+      const user = getUserSession();
+      if (user) {
+        const favoriteBtn = document.createElement('button');
+        favoriteBtn.className = 'add-favorite-btn';
+        favoriteBtn.innerHTML = '♥';
+        favoriteBtn.title = 'Add to favorites';
+        favoriteBtn.onclick = (e) => {
+          e.stopPropagation();
+          addToFavorites(card.id, favoriteBtn);
+        };
+        cardDiv.appendChild(favoriteBtn);
+      }
+
       cardDiv.appendChild(img);
       cardDiv.appendChild(info);
 
@@ -267,4 +281,59 @@ function closeCardModal(modal) {
   setTimeout(() => {
     modal.remove();
   }, 300);
+}
+
+// Add to favorites function
+async function addToFavorites(cardId, button) {
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  if (!token) {
+    alert('You need to be logged in to add favorites');
+    return;
+  }
+
+  const cardIdInt = parseInt(cardId, 10);
+  console.log('Adding favorite - cardId:', cardId, 'type:', typeof cardId, 'parsed:', cardIdInt);
+
+  try {
+    const payload = { card_id: cardIdInt };
+    console.log('Request payload:', JSON.stringify(payload));
+
+    const response = await fetch(`${API_CONFIG.BASE_URL}/favorite/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Server error response:', errorData);
+      
+      // Handle specific error cases
+      if (errorData.detail && errorData.detail.includes('already in favorites')) {
+        alert('This card is already in your favorites!');
+      } else {
+        throw new Error(`Failed to add favorite: ${JSON.stringify(errorData)}`);
+      }
+      return;
+    }
+
+    // Success feedback
+    button.classList.add('added');
+    button.innerHTML = '✓';
+    button.title = 'Added to favorites';
+    
+    // Disable button to prevent duplicate adds
+    button.disabled = true;
+    
+    setTimeout(() => {
+      button.innerHTML = '♥';
+    }, 2000);
+
+  } catch (error) {
+    console.error('Error adding favorite:', error);
+    alert('Failed to add favorite. Please try again.');
+  }
 }

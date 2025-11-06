@@ -722,6 +722,7 @@ body {
     padding: 15px;
     transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
     cursor: pointer;
+    position: relative;
 }
 
 .card-item:hover {
@@ -745,6 +746,53 @@ body {
     text-align: center;
     line-height: 1.4;
     font-weight: 500;
+}
+
+/* Add to Favorites Button */
+.add-favorite-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #ff6b35;
+    color: #ff6b35;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    line-height: 1;
+    opacity: 0;
+}
+
+.card-item:hover .add-favorite-btn {
+    opacity: 1;
+}
+
+.add-favorite-btn:hover {
+    background: #ff6b35;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.add-favorite-btn.added {
+    background: #4caf50;
+    border-color: #4caf50;
+    color: #fff;
+}
+
+.add-favorite-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.add-favorite-btn:disabled:hover {
+    transform: scale(1);
 }
 
 /* Card Modal Styles */

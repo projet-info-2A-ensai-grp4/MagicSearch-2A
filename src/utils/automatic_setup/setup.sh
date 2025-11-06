@@ -466,6 +466,12 @@ with dbConnection() as conn:
             prompt TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(user_id)
         );
+
+        -- Insert default roles
+        INSERT INTO roles (role_id, role_name) VALUES
+            (0, 'player'),
+            (1, 'admin')
+        ON CONFLICT (role_id) DO NOTHING;
         """)
     conn.commit()
 

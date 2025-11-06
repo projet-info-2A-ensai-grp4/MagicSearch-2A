@@ -4,6 +4,63 @@
 let selectedColors = [];
 let lastSearchQuery = '';
 
+// Authentication state management
+function getUserSession() {
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  if (!token) return null;
+
+  try {
+    // Decode JWT to get user info (simple base64 decode of payload)
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload));
+
+    // Check if token is expired
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      clearUserSession();
+      return null;
+    }
+
+    return decoded;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearUserSession() {
+  localStorage.removeItem('access_token');
+  sessionStorage.removeItem('access_token');
+  updateHeaderAuth();
+}
+
+function updateHeaderAuth() {
+  const user = getUserSession();
+  const accountLinks = document.querySelector('.account-links');
+
+  if (user && accountLinks) {
+    // User is logged in
+    accountLinks.innerHTML = `
+      <span class="username-display">Hello, ${user.username}</span>
+      <button class="btn-outline logout-btn" id="logoutBtn">Log Out</button>
+    `;
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      clearUserSession();
+      window.location.href = 'index.html';
+    });
+  } else if (accountLinks) {
+    // User is not logged in
+    accountLinks.innerHTML = `
+      <a href="login.html" class="btn-outline">Log In</a>
+      <a href="register.html" class="btn-primary">Register</a>
+    `;
+  }
+}
+
+// Initialize auth state on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateHeaderAuth();
+});
+
 // Search functionality
 document.querySelector(".search-bar").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -12,7 +69,7 @@ document.querySelector(".search-bar").addEventListener("submit", async (e) => {
 
   lastSearchQuery = input.value;
 
-  const res = await fetch("http://localhost:8000/search", {
+  const res = await fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: lastSearchQuery, limit: limit }),
@@ -75,7 +132,7 @@ document.getElementById('applyFilter').addEventListener('click', async function 
   console.log('Search with filters:', filterBody);
 
   try {
-    const res = await fetch("http://localhost:8000/search", {
+    const res = await fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(filterBody),
@@ -111,7 +168,7 @@ document.getElementById('resetFilter').addEventListener('click', function () {
       filters: {}
     };
 
-    fetch("http://localhost:8000/search", {
+    fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(filterBody),

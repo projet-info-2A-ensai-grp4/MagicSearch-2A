@@ -78,12 +78,30 @@ body {
 .account-links {
     display: flex;
     gap: 14px;
+    align-items: center;
 }
 
 .account-links a {
     padding: 8px 18px;
     border-radius: 25px;
     text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.username-display {
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+.logout-btn {
+    cursor: pointer;
+    padding: 8px 18px;
+    border-radius: 25px;
     font-size: 0.9rem;
     font-weight: 600;
     transition: all 0.3s ease;

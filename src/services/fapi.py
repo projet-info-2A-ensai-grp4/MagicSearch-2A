@@ -4,9 +4,12 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from dao.playerDao import PlayerDao
 from dao.cardDao import CardDao
+from dao.userDao import UserDao
 import hashlib
 from services.userService import UserService
 from dao.deckDao import DeckDao
+from utils.auth import create_access_token
+
 
 app = FastAPI()
 player_dao = PlayerDao()
@@ -128,14 +131,14 @@ async def register(user_data: UserRegistration):
     try:
         password_hash = hashlib.sha256(user_data.password.encode()).hexdigest()
 
-        user_service = UserService(user_data.username, user_data.email, password_hash)
+        user_service = UserService(user_data.username, user_data.email, password_hash, UserDao())
 
         new_user = user_service.signUp()
 
         return {
             "message": "User registered successfully",
             "user": {
-                "id": new_user["id"],
+                "id": new_user["user_id"],
                 "username": new_user["username"],
                 "email": new_user["email"],
             },
@@ -161,9 +164,16 @@ async def login(user_data: UserLogin):
             username=user_data.username,
             email=None,
             password_hash=user_data.password_hash,
+            user_dao=UserDao(),
         )
 
         user = user_service.signIn()
+
+        token_data = {"user_id": user["user_id"],
+                      "username": user["username"],
+                      "email": user["email"]}
+
+        access_token = create_access_token(token_data)
 
         return {
             "message": "Login successful",
@@ -172,6 +182,7 @@ async def login(user_data: UserLogin):
                 "username": user["username"],
                 "email": user["email"],
             },
+            "access_token": access_token
         }
 
     except ValueError as e:

@@ -2,11 +2,11 @@ from dao.userDao import UserDao
 
 
 class UserService:
-    def __init__(self, username, email, password_hash):
+    def __init__(self, username, email, password_hash, actual_user):
         self.username = username
         self.email = email
         self.password_hash = password_hash
-        self.actual_user = UserDao()
+        self.actual_user = actual_user
 
     def valid_username(self):
         """

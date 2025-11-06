@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
@@ -29,7 +29,7 @@ app.add_middleware(
 class SearchQuery(BaseModel):
     text: str
     limit: Optional[int] = 10
-    filters: Optional[Dict] = None  # Add filters parameter
+    filters: Optional[Dict] = None
 
 
 class CardFilterQuery(BaseModel):
@@ -84,7 +84,7 @@ async def search(query: SearchQuery):
     Endpoint pour effectuer une recherche sémantique sur les cartes Magic.
     """
     text = query.text
-    limit = min(query.limit, 50)  # Maximum 50 cards
+    limit = min(query.limit, 50)
     filters = query.filters or {}
 
     print(f"Requête reçue : {text}, limit: {limit}, filters: {filters}")
@@ -123,6 +123,119 @@ async def filter(query: CardFilterQuery):
         return {"error": str(e)}
 
 
+# ============================================
+# BROWSING/EXPLORING ENDPOINTS
+# ============================================
+
+# IMPORTANT: Define /cards/random BEFORE /cards/{card_id}
+# to avoid the path parameter capturing "random" as an ID
+
+
+@app.get("/cards/random")
+async def get_random_card():
+    """
+    Get a random card from the database.
+
+    Returns
+    -------
+    dict
+        A randomly selected card.
+    """
+    try:
+        card = card_dao.get_random_card()
+
+        if not card:
+            raise HTTPException(status_code=404, detail="No cards found in database")
+
+        return {"card": card}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /cards/random: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.get("/cards/{card_id}")
+async def get_card_by_id(card_id: int):
+    """
+    Retrieve a card by its unique ID.
+
+    Parameters
+    ----------
+    card_id : int
+        The unique identifier of the card.
+
+    Returns
+    -------
+    dict
+        Card information if found.
+
+    Raises
+    ------
+    HTTPException
+        404 if card not found, 400 if invalid ID.
+    """
+    if card_id <= 0:
+        raise HTTPException(
+            status_code=400, detail="Card ID must be a positive integer"
+        )
+
+    try:
+        card = card_dao.get_by_id(card_id)
+
+        if not card:
+            raise HTTPException(
+                status_code=404, detail=f"Card with ID {card_id} not found"
+            )
+
+        return {"card": card}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in /cards/{card_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@app.get("/cards")
+async def search_cards_by_name(
+    name: Optional[str] = None, limit: int = 20, offset: int = 0
+):
+    """
+    Search cards by exact or partial name match.
+
+    Parameters
+    ----------
+    name : str, optional
+        Full or partial card name to search for (case-insensitive).
+    limit : int, optional
+        Maximum number of results (default: 20, max: 100).
+    offset : int, optional
+        Pagination offset (default: 0).
+
+    Returns
+    -------
+    dict
+        List of matching cards with pagination info.
+    """
+    if not name:
+        raise HTTPException(
+            status_code=400, detail="Query parameter 'name' is required"
+        )
+
+    limit = min(limit, 100)  # Cap at 100 results
+
+    try:
+        cards = card_dao.search_by_name(name, limit=limit, offset=offset)
+
+        return {"results": cards, "count": len(cards), "limit": limit, "offset": offset}
+
+    except Exception as e:
+        print(f"Error in /cards?name={name}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 @app.post("/register")
 async def register(user_data: UserRegistration):
     """
@@ -131,7 +244,9 @@ async def register(user_data: UserRegistration):
     try:
         password_hash = hashlib.sha256(user_data.password.encode()).hexdigest()
 
-        user_service = UserService(user_data.username, user_data.email, password_hash, UserDao())
+        user_service = UserService(
+            user_data.username, user_data.email, password_hash, UserDao()
+        )
 
         new_user = user_service.signUp()
 
@@ -169,9 +284,11 @@ async def login(user_data: UserLogin):
 
         user = user_service.signIn()
 
-        token_data = {"user_id": user["user_id"],
-                      "username": user["username"],
-                      "email": user["email"]}
+        token_data = {
+            "user_id": user["user_id"],
+            "username": user["username"],
+            "email": user["email"],
+        }
 
         access_token = create_access_token(token_data)
 
@@ -182,7 +299,7 @@ async def login(user_data: UserLogin):
                 "username": user["username"],
                 "email": user["email"],
             },
-            "access_token": access_token
+            "access_token": access_token,
         }
 
     except ValueError as e:
@@ -236,7 +353,7 @@ async def delete_deck(query: DeckdeleteQuery):
 @app.get("/deck/user/read")
 async def read_user_deck(
     user_id: int = Query(..., description="ID de l'utilisateur"),
-    deck_id: Optional[int] = Query(None, description="ID du deck (facultatif)")
+    deck_id: Optional[int] = Query(None, description="ID du deck (facultatif)"),
 ):
     try:
         if deck_id:
@@ -262,7 +379,7 @@ async def add_card_deck(query: DeckaddCardQuery):
 @app.delete("/deck/card/remove")
 async def remove_card_deck(
     deck_id: int = Query(..., description="ID du deck"),
-    card_id: int = Query(..., description="ID de la carte à retirer")
+    card_id: int = Query(..., description="ID de la carte à retirer"),
 ):
     try:
         results = deck_dao.remove_card_from_deck(deck_id, card_id)

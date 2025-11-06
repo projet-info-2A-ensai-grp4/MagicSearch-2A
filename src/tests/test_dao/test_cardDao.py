@@ -79,21 +79,34 @@ def mock_card_dao():
         def fetchone_side_effect(*args, **kwargs):
             if not mock_cursor.execute.call_args:
                 return None
-            sql = mock_cursor.execute.call_args[0][0].strip().upper()
+            sql = mock_cursor.execute.call_args[0][0]
+            sql_upper = (
+                sql.strip().upper() if isinstance(sql, str) else str(sql).upper()
+            )
             params = (
                 mock_cursor.execute.call_args[0][1]
                 if len(mock_cursor.execute.call_args[0]) > 1
                 else None
             )
 
-            if "COUNT(*)" in sql:
+            if "COUNT(*)" in sql_upper:
                 return {"count": len(fake_db)}
 
-            if sql.startswith("SELECT") and "WHERE ID = %S" in sql:
+            if sql_upper.startswith("SELECT") and "WHERE ID = %S" in sql_upper:
                 card_id = params[0]
                 return copy.deepcopy(fake_db.get(card_id))
 
-            if sql.startswith("INSERT"):
+            # Handle ILIKE queries for search_by_name
+            if "ILIKE" in sql_upper:
+                return None  # Will use fetchall instead
+
+            # Handle RANDOM() queries for get_random_card
+            if "RANDOM()" in sql_upper:
+                if fake_db:
+                    return copy.deepcopy(list(fake_db.values())[0])
+                return None
+
+            if sql_upper.startswith("INSERT"):
                 card_data = {k: None for k in dao.columns_valid if k != "id"}
                 if params:
                     for i, key in enumerate(card_data.keys()):
@@ -104,12 +117,21 @@ def mock_card_dao():
                 fake_db[card_data["id"]] = copy.deepcopy(card_data)
                 return copy.deepcopy(card_data)
 
-            if sql.startswith("UPDATE"):
+            if "UPDATE" in sql_upper:
                 if not params:
                     return None
                 card_id = params[-1]
                 if card_id in fake_db:
-                    set_part = sql.split("SET")[1].split("WHERE")[0]
+                    # Handle text_to_embed updates
+                    if "TEXT_TO_EMBED" in sql_upper:
+                        fake_db[card_id]["text_to_embed"] = params[0]
+                        return copy.deepcopy(fake_db[card_id])
+                    # Handle embedding updates
+                    if "EMBEDDING" in sql_upper:
+                        fake_db[card_id]["embedding"] = params[0]
+                        return copy.deepcopy(fake_db[card_id])
+                    # Handle general updates
+                    set_part = sql_upper.split("SET")[1].split("WHERE")[0]
                     cols = [
                         p.split("=")[0].strip().lower() for p in set_part.split(",")
                     ]
@@ -119,7 +141,7 @@ def mock_card_dao():
                     return copy.deepcopy(fake_db[card_id])
                 return None
 
-            if sql.startswith("DELETE"):
+            if sql_upper.startswith("DELETE"):
                 card_id = params[0]
                 return copy.deepcopy(fake_db.pop(card_id, None))
 
@@ -220,3 +242,484 @@ def test_filter_with_valid_kwargs(mock_card_dao):
     assert params[-2:] == [10, 0]
     assert all(r["type"] == "Creature" for r in results)
     assert [r["id"] for r in results] == [420]
+
+
+def test_edit_text_to_embed_valid(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    # Mock rowcount for successful update
+    cursor.rowcount = 1
+
+    result = dao.edit_text_to_embed("New embedded text", 420)
+
+    assert result == 1
+    cursor.execute.assert_called()
+    query = cursor.execute.call_args[0][0]
+    params = cursor.execute.call_args[0][1]
+    # Convert SQL object to string for comparison
+    query_str = str(query) if hasattr(query, "as_string") else query
+    assert "UPDATE cards SET text_to_embed" in query_str or "text_to_embed" in query_str
+    assert params == ("New embedded text", 420)
+    dao.conn.commit.assert_called()
+
+
+def test_edit_text_to_embed_invalid_type(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(TypeError, match="embed_me must be a string"):
+        dao.edit_text_to_embed(123, 420)
+
+    with pytest.raises(TypeError, match="embed_me must be a string"):
+        dao.edit_text_to_embed(None, 420)
+
+
+def test_edit_text_to_embed_empty_string(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(ValueError, match="embed_me cannot be empty or whitespace only"):
+        dao.edit_text_to_embed("", 420)
+
+    with pytest.raises(ValueError, match="embed_me cannot be empty or whitespace only"):
+        dao.edit_text_to_embed("   ", 420)
+
+
+def test_edit_text_to_embed_invalid_card_id(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(ValueError, match="Card ID must be a positive integer"):
+        dao.edit_text_to_embed("Valid text", -1)
+
+    with pytest.raises(ValueError, match="Card ID must be a positive integer"):
+        dao.edit_text_to_embed("Valid text", 0)
+
+    with pytest.raises(ValueError, match="Card ID must be a positive integer"):
+        dao.edit_text_to_embed("Valid text", "abc")
+
+
+def test_edit_text_to_embed_nonexistent_card(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    # Mock rowcount = 0 to simulate no rows updated
+    cursor.rowcount = 0
+
+    with pytest.raises(ValueError, match="No card found with ID 999"):
+        dao.edit_text_to_embed("Valid text", 999)
+
+
+def test_edit_vector_valid(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    # Mock rowcount for successful update
+    cursor.rowcount = 1
+
+    vector = [0.5, 0.6, 0.7, 0.8]
+    result = dao.edit_vector(vector, 420)
+
+    assert result == 1
+    cursor.execute.assert_called()
+    query = cursor.execute.call_args[0][0]
+    params = cursor.execute.call_args[0][1]
+    # Convert SQL object to string for comparison
+    query_str = str(query) if hasattr(query, "as_string") else query
+    assert "UPDATE cards SET embedding" in query_str or "embedding" in query_str
+    assert params == (vector, 420)
+    dao.conn.commit.assert_called()
+
+
+def test_edit_vector_invalid_type(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(TypeError, match="vector_me must be a list"):
+        dao.edit_vector("not a list", 420)
+
+    with pytest.raises(TypeError, match="vector_me must be a list"):
+        dao.edit_vector((0.1, 0.2), 420)
+
+
+def test_edit_vector_empty_list(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(ValueError, match="vector_me cannot be empty"):
+        dao.edit_vector([], 420)
+
+
+def test_edit_vector_non_numeric_values(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(TypeError, match="vector_me must contain only numeric values"):
+        dao.edit_vector([0.1, "string", 0.3], 420)
+
+    with pytest.raises(TypeError, match="vector_me must contain only numeric values"):
+        dao.edit_vector([0.1, None, 0.3], 420)
+
+
+def test_edit_vector_invalid_card_id(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    vector = [0.1, 0.2, 0.3]
+
+    with pytest.raises(ValueError, match="card_id must be a positive integer"):
+        dao.edit_vector(vector, -1)
+
+    with pytest.raises(ValueError, match="card_id must be a positive integer"):
+        dao.edit_vector(vector, 0)
+
+
+def test_edit_vector_nonexistent_card(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    # Mock rowcount = 0 to simulate no rows updated
+    cursor.rowcount = 0
+    vector = [0.1, 0.2, 0.3]
+
+    with pytest.raises(ValueError, match="No card found with ID 999"):
+        dao.edit_vector(vector, 999)
+
+
+def test_search_by_name_valid(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    # Mock search results - the mock will return fake_db values
+    mock_results = [
+        {"id": 420, "name": "Example Card", "type": "Creature"},
+        {"id": 421, "name": "Example Spell", "type": "Instant"},
+    ]
+
+    # Clear the side_effect so return_value takes precedence
+    cursor.fetchall.side_effect = None
+    cursor.fetchall.return_value = mock_results
+
+    results = dao.search_by_name("Example")
+
+    assert len(results) == 2
+    cursor.execute.assert_called()
+    query = cursor.execute.call_args[0][0]
+    params = cursor.execute.call_args[0][1]
+
+    assert "SELECT" in query.upper()
+    assert "WHERE name ILIKE %s OR ascii_name ILIKE %s" in query
+    assert "ORDER BY name" in query
+    assert "LIMIT %s OFFSET %s" in query
+    assert params == ("%Example%", "%Example%", 20, 0)
+
+
+def test_search_by_name_with_pagination(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    # Clear side_effect
+    cursor.fetchall.side_effect = None
+    cursor.fetchall.return_value = []
+
+    dao.search_by_name("Card", limit=10, offset=5)
+
+    params = cursor.execute.call_args[0][1]
+    assert params[-2:] == (10, 5)
+
+
+def test_search_by_name_empty_string(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(ValueError, match="Search name cannot be empty"):
+        dao.search_by_name("")
+
+    with pytest.raises(ValueError, match="Search name cannot be empty"):
+        dao.search_by_name("   ")
+
+
+def test_search_by_name_invalid_limit(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(ValueError, match="Limit must be positive"):
+        dao.search_by_name("Card", limit=0)
+
+    with pytest.raises(ValueError, match="Limit must be positive"):
+        dao.search_by_name("Card", limit=-5)
+
+
+def test_search_by_name_invalid_offset(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(ValueError, match="Offset must be non-negative"):
+        dao.search_by_name("Card", offset=-1)
+
+
+def test_get_random_card_success(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    # Mock random card result
+    mock_card = {
+        "id": 420,
+        "name": "Example Card",
+        "type": "Creature",
+        "mana_value": 2,
+        "colors": ["G"],
+        "image_url": "http://example.com/card.jpg",
+    }
+    cursor.fetchone.return_value = mock_card
+
+    result = dao.get_random_card()
+
+    assert result is not None
+    assert result["id"] == 420
+    assert result["name"] == "Example Card"
+    cursor.execute.assert_called()
+    query = cursor.execute.call_args[0][0]
+    assert "SELECT" in query.upper()
+    assert "ORDER BY RANDOM()" in query
+    assert "LIMIT 1" in query
+
+
+def test_get_random_card_empty_database(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    # Clear the fake database
+    fake_db.clear()
+
+    # Override fetchone to return None for empty database
+    cursor.fetchone.side_effect = lambda: None
+
+    result = dao.get_random_card()
+
+    assert result is None
+
+
+def test_filter_with_array_columns(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    # Test with array column (colors)
+    dao.filter(order_by="id", colors=["R", "G"])
+
+    query = cursor.execute.call_args[0][0]
+    params = cursor.execute.call_args[0][1]
+
+    assert "colors && %s" in query
+    assert ["R", "G"] in params
+
+
+def test_filter_with_comparison_operators(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    # Test with lte operator
+    dao.filter(order_by="id", mana_value__lte=3)
+
+    query = cursor.execute.call_args[0][0]
+    params = cursor.execute.call_args[0][1]
+
+    assert "mana_value <= %s" in query
+    assert 3 in params
+
+
+def test_filter_with_gte_operator(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    # Test with gte operator
+    dao.filter(order_by="id", mana_value__gte=5)
+
+    query = cursor.execute.call_args[0][0]
+    params = cursor.execute.call_args[0][1]
+
+    assert "mana_value >= %s" in query
+    assert 5 in params
+
+
+def test_filter_descending_order(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    dao.filter(order_by="id", asc=False)
+
+    query = cursor.execute.call_args[0][0]
+    assert "ORDER BY id DESC" in query
+
+
+def test_filter_invalid_order_by_column(mock_card_dao):
+    dao, cursor, _ = mock_card_dao
+
+    with pytest.raises(ValueError, match="Invalid order_by"):
+        dao.filter(order_by="invalid_column")
+
+
+def test_filter_with_none_value(mock_card_dao):
+    dao, cursor, fake_db = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    dao.filter(order_by="id", name=None)
+
+    query = cursor.execute.call_args[0][0]
+    assert "FALSE" in query
+
+
+def test_edit_text_to_embed_with_context_manager(mock_card_dao):
+    """Test that edit_text_to_embed works within context manager"""
+    dao, cursor, fake_db = mock_card_dao
+
+    # The method should use context manager internally
+    cursor.rowcount = 1
+
+    with patch.object(dao, "__enter__", return_value=dao):
+        with patch.object(dao, "__exit__", return_value=None):
+            dao.cursor = cursor
+            dao.conn = MagicMock()
+            result = dao.edit_text_to_embed("Context test", 420)
+
+            assert result == 1
+            dao.conn.commit.assert_called()
+
+
+def test_edit_vector_with_mixed_numeric_types(mock_card_dao):
+    """Test edit_vector accepts both int and float"""
+    dao, cursor, fake_db = mock_card_dao
+
+    cursor.rowcount = 1
+    dao.cursor = cursor
+    dao.conn = MagicMock()
+
+    vector = [1, 2.5, 3, 4.7, 5]
+    result = dao.edit_vector(vector, 420)
+
+    assert result == 1
+
+
+def test_search_by_name_case_insensitive(mock_card_dao):
+    """Test search is case-insensitive"""
+    dao, cursor, _ = mock_card_dao
+
+    mock_results = [{"id": 420, "name": "Example Card"}]
+    cursor.fetchall.return_value = mock_results
+
+    # Search with different cases
+    results1 = dao.search_by_name("EXAMPLE")
+    results2 = dao.search_by_name("example")
+    results3 = dao.search_by_name("ExAmPlE")
+
+    # All should produce same query pattern
+    for call in cursor.execute.call_args_list[-3:]:
+        assert "ILIKE" in call[0][0]
+
+
+def test_search_by_name_special_characters(mock_card_dao):
+    """Test search handles special characters safely"""
+    dao, cursor, _ = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    # Should not raise exception with special chars
+    dao.search_by_name("Card's Name")
+    dao.search_by_name("Card-Name")
+    dao.search_by_name("Card (Name)")
+
+    assert cursor.execute.call_count >= 3
+
+
+def test_search_by_name_returns_specific_columns(mock_card_dao):
+    """Test that search_by_name only returns specific columns"""
+    dao, cursor, _ = mock_card_dao
+
+    cursor.fetchall.return_value = []
+    dao.search_by_name("Test")
+
+    query = cursor.execute.call_args[0][0]
+    # Should not be SELECT *
+    assert "SELECT id, name, ascii_name, type, mana_cost" in query
+    assert "SELECT *" not in query
+
+
+def test_get_random_card_returns_specific_columns(mock_card_dao):
+    """Test that get_random_card returns specific columns"""
+    dao, cursor, _ = mock_card_dao
+
+    cursor.fetchone.return_value = {"id": 420, "name": "Test"}
+    dao.get_random_card()
+
+    query = cursor.execute.call_args[0][0]
+    # Should select specific columns
+    assert "SELECT id, name" in query
+    assert "ORDER BY RANDOM()" in query
+
+
+def test_filter_with_multiple_conditions(mock_card_dao):
+    """Test filter with multiple WHERE conditions"""
+    dao, cursor, _ = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    dao.filter(order_by="id", type="Creature", mana_value__lte=3, colors=["G"])
+
+    query = cursor.execute.call_args[0][0]
+    assert "WHERE" in query
+    assert "AND" in query
+    assert query.count("AND") >= 2
+
+
+def test_filter_with_list_on_non_array_column(mock_card_dao):
+    """Test filter handles lists on non-array columns with IN clause"""
+    dao, cursor, _ = mock_card_dao
+
+    cursor.fetchall.return_value = []
+
+    dao.filter(order_by="id", type=["Creature", "Artifact"])
+
+    query = cursor.execute.call_args[0][0]
+    params = cursor.execute.call_args[0][1]
+
+    assert "type IN" in query
+    assert "Creature" in params
+    assert "Artifact" in params
+
+
+def test_filter_validates_column_names_with_operators(mock_card_dao):
+    """Test filter validates column names even with __lte/__gte operators"""
+    dao, cursor, _ = mock_card_dao
+
+    # Valid column with operator should work
+    cursor.fetchall.return_value = []
+    dao.filter(order_by="id", mana_value__lte=5)
+
+    # Invalid column with operator should fail
+    with pytest.raises(ValueError, match="Invalid keys"):
+        dao.filter(order_by="id", invalid_col__lte=5)
+
+
+def test_edit_text_to_embed_updates_correct_card(mock_card_dao):
+    """Test that edit_text_to_embed updates the correct card"""
+    dao, cursor, fake_db = mock_card_dao
+
+    # Add another card
+    fake_db[421] = copy.deepcopy(fake_db[420])
+    fake_db[421]["id"] = 421
+    fake_db[421]["text_to_embed"] = "Other text"
+
+    cursor.rowcount = 1
+    dao.cursor = cursor
+    dao.conn = MagicMock()
+
+    dao.edit_text_to_embed("Updated text", 420)
+
+    # Verify the query targets the correct ID
+    params = cursor.execute.call_args[0][1]
+    assert params[1] == 420  # card_id parameter
+
+
+def test_edit_vector_updates_correct_card(mock_card_dao):
+    """Test that edit_vector updates the correct card"""
+    dao, cursor, fake_db = mock_card_dao
+
+    cursor.rowcount = 1
+    dao.cursor = cursor
+    dao.conn = MagicMock()
+
+    vector = [0.9, 0.8, 0.7]
+    dao.edit_vector(vector, 420)
+
+    # Verify correct parameters
+    params = cursor.execute.call_args[0][1]
+    assert params[0] == vector
+    assert params[1] == 420

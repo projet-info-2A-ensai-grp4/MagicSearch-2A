@@ -9,7 +9,10 @@ temps de travail estimé : 20h
 **This week, the all group worked on the report, because it is very important!**
 ### Nom Prénom élève 1
 Tanguy Ajas
-- [ ] First implementation of FastAPI
+- [x] implementation of fastapi 
+- [x] search endpoint
+- [x] register system (register.js, fapi.py)
+- [x] login and JWT (login.js, fapi.py, auth.py)
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

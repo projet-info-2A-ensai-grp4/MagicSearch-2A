@@ -7,6 +7,7 @@ from dao.cardDao import CardDao
 from dao.userDao import UserDao
 import hashlib
 from services.userService import UserService
+from utils.auth import create_access_token
 
 
 app = FastAPI()
@@ -142,6 +143,12 @@ async def login(user_data: UserLogin):
 
         user = user_service.signIn()
 
+        token_data = {"user_id": user["user_id"],
+                      "username": user["username"],
+                      "email": user["email"]}
+
+        access_token = create_access_token(token_data)
+
         return {
             "message": "Login successful",
             "user": {
@@ -149,6 +156,7 @@ async def login(user_data: UserLogin):
                 "username": user["username"],
                 "email": user["email"],
             },
+            "access_token": access_token
         }
 
     except ValueError as e:

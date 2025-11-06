@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 alert('Registration successful!');
-                window.location.href = '../pages/index.html';
+                window.location.href = '../pages/login.html';
             } else {
                 if (result.error === 'USERNAME ISSUE') {
                     alert('This username is invalid or already taken.');

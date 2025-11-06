@@ -146,10 +146,10 @@ class DeckaddCardQuery(BaseModel):
     summary="Semantic card search",
     description="""
     Perform a natural language search on Magic cards using vector embeddings.
-    
+
     This endpoint converts your text query into a vector and finds the most similar cards
     based on their semantic meaning, not just keyword matching.
-    
+
     **Examples:**
     - "powerful creatures with trample"
     - "blue control spells that counter"

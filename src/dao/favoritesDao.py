@@ -44,7 +44,7 @@ class FavoritesDao(AbstractDao):
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-        
+
     # READ
     def exist(self, id: list):
         """
@@ -80,7 +80,7 @@ class FavoritesDao(AbstractDao):
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-    
+
     def get_by_id(self, id):
         """
         List of the user's favorite cards.
@@ -116,13 +116,13 @@ class FavoritesDao(AbstractDao):
         ----------
         id : list[int]
             List containing the user_id and the card_id: [user_id, card_id].
-        
+
         Returns
         -------
         del_fav : dict
             Dictionary containing the deleted favorite card information, such as 'user_id'
             and 'card_id'.
-        
+
         Raises:
         -------
         ConnectionError

@@ -55,9 +55,7 @@ def test_get_card_image_url_multiface_with_image():
 def test_get_card_image_url_multiface_no_image():
     fake_response = MagicMock()
     fake_response.status_code = 200
-    fake_response.json.return_value = {
-        "data": [{"card_faces": [{}]}]
-    }
+    fake_response.json.return_value = {"data": [{"card_faces": [{}]}]}
 
     with patch("requests.get", return_value=fake_response):
         url = get_card_image_url("no-image-face-id")
@@ -67,9 +65,7 @@ def test_get_card_image_url_multiface_no_image():
 def test_get_card_image_url_no_image_keys():
     fake_response = MagicMock()
     fake_response.status_code = 200
-    fake_response.json.return_value = {
-        "data": [{"name": "No Image Card"}]
-    }
+    fake_response.json.return_value = {"data": [{"name": "No Image Card"}]}
 
     with patch("requests.get", return_value=fake_response):
         url = get_card_image_url("no-image-key-id")
@@ -114,7 +110,9 @@ def test_fetch_and_update_images(mock_sleep):
 
         # UPDATE devrait être le second
         update_calls = [
-            call for call in mock_cursor.execute.call_args_list if "UPDATE" in call[0][0]
+            call
+            for call in mock_cursor.execute.call_args_list
+            if "UPDATE" in call[0][0]
         ]
         assert len(update_calls) == 1
         args, kwargs = update_calls[0]

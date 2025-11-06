@@ -8,7 +8,7 @@ class FavoriteBusiness:
         self.favorites = favorites_dao
         self.user = user_dao
         self.card = card_dao
-    
+
     def add_favorite(self, user_id, card_id):
         """
         Add a card to user's favorites.
@@ -19,7 +19,7 @@ class FavoriteBusiness:
             The user id.
         card_id : int
             The card id to add as favorite.
-        
+
         Returns
         -------
         dict :
@@ -34,7 +34,7 @@ class FavoriteBusiness:
             return {"user_id": user_id, "card_id": card_id}
         row = self.favorites.create(user_id, card_id)
         return row
-    
+
     def remove_favorite(self, user_id, card_id):
         """
         Remove a card from a user's favorites.
@@ -45,7 +45,7 @@ class FavoriteBusiness:
             The user id.
         card_id : int
             The card id to remove from the favorite.
-        
+
         Returns
         -------
         dict :

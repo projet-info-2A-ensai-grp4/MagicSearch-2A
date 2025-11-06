@@ -1,6 +1,7 @@
 import psycopg2
 from .abstractDao import AbstractDao
 
+
 class HistoriesDao(AbstractDao):
     # CREATE
     def create(self, user_id, prompt):
@@ -13,7 +14,7 @@ class HistoriesDao(AbstractDao):
             The user id.
         prompt : str
             The research.
-        
+
         Returns
         -------
         row : dict
@@ -43,7 +44,7 @@ class HistoriesDao(AbstractDao):
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-    
+
     # READ
     def exist(self, id):
         """
@@ -58,7 +59,7 @@ class HistoriesDao(AbstractDao):
         Parameters
         ----------
         id : int
-            
+
         """
         pass
 
@@ -78,13 +79,13 @@ class HistoriesDao(AbstractDao):
         ----------
         id : list[int]
             List containing the history_id.
-        
+
         Returns
         -------
         del_his : dict
             Dictionary containing the deleted line in the history:
             {'user_id': int, 'prompt': str}
-        
+
         Raises:
         -------
         ConnectionError

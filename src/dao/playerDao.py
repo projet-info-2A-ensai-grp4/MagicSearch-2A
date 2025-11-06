@@ -29,7 +29,7 @@ class PlayerDao(UserDao):
         query : str or list
             Either a text query (str) to be embedded, or an embedding vector (list).
         filters : dict, optional
-            Additional filters to apply (e.g., {'color': 'blue', 'type': 'creature'}).
+            Additional filters to apply (e.g., {'colors': ['U', 'B'], 'mana_value__gte': 3}).
             Default is None.
         limit : int, optional
             Maximum number of results to return. Default is 5.
@@ -73,6 +73,7 @@ class PlayerDao(UserDao):
                             type,
                             color_identity,
                             mana_cost,
+                            mana_value,
                             image_url,
                             embedding <-> %s::vector as distance
                         FROM cards
@@ -80,13 +81,38 @@ class PlayerDao(UserDao):
 
                     params = [query_embedding]
 
+                    # Build WHERE clause for filters
+                    conditions = []
                     if filters:
-                        conditions = []
                         for key, value in filters.items():
-                            conditions.append(f"{key} = %s")
-                            params.append(value)
-                        if conditions:
-                            query_sql += " WHERE " + " AND ".join(conditions)
+                            # Handle comparison operators (mana_value__gte, mana_value__lte)
+                            if "__" in key:
+                                field, operator = key.rsplit("__", 1)
+
+                                if operator == "gte":
+                                    conditions.append(f"{field} >= %s")
+                                    params.append(value)
+                                elif operator == "lte":
+                                    conditions.append(f"{field} <= %s")
+                                    params.append(value)
+                                elif operator == "gt":
+                                    conditions.append(f"{field} > %s")
+                                    params.append(value)
+                                elif operator == "lt":
+                                    conditions.append(f"{field} < %s")
+                                    params.append(value)
+                            # Handle color array filter
+                            elif key == "colors" and isinstance(value, list):
+                                # Use && operator for array overlap
+                                conditions.append("colors && %s")
+                                params.append(value)
+                            # Handle simple equality
+                            else:
+                                conditions.append(f"{key} = %s")
+                                params.append(value)
+
+                    if conditions:
+                        query_sql += " WHERE " + " AND ".join(conditions)
 
                     query_sql += """
                         ORDER BY distance
@@ -127,27 +153,18 @@ if __name__ == "__main__":
     player_dao = PlayerDao()
 
     try:
-        # Test 1: Search using card id 420's embedding
-        print("Test 1: Getting embedding from card id 422...")
-        test_embedding = player_dao.get_card_embedding(422)
-
-        if test_embedding is not None:
-            results = player_dao.natural_language_search(test_embedding, limit=5)
-            print(f"Found {len(results)} similar cards:")
-            for card in results:
-                print(f"  - {card['name']} (distance: {card['distance']:.4f})")
-
-        # Test 2: Search using text query (embedded on-the-fly)
-        print("\nTest 2: Searching with text query...")
+        # Test with filters
+        print("Test: Searching with filters...")
         results = player_dao.natural_language_search(
-            """creature that goes well with a blue-black
-                                                        deck synergy around losing
-                                                        pv to draw cards""",
+            "powerful creatures",
+            filters={"colors": ["U", "B"], "mana_value__lte": 4},
             limit=5,
         )
         print(f"Found {len(results)} cards:")
         for card in results:
-            print(f"  - {card['name']} (distance: {card['distance']:.4f})")
+            print(
+                f"  - {card['name']} (CMC: {card.get('mana_value', 'N/A')}, distance: {card['distance']:.4f})"
+            )
 
     except Exception as e:
-        print(f"Error running Tests: {type(e).__name__}: {e}")
+        print(f"Error: {type(e).__name__}: {e}")

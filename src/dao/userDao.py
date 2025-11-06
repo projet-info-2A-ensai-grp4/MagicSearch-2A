@@ -3,53 +3,7 @@ from .abstractDao import AbstractDao
 
 
 class UserDao(AbstractDao):
-    def exist(self, id):
-        """
-        Verify if an id is correct and exists in the database.
-
-        Parameters
-        ----------
-        id : int
-            The id we want to check.
-
-        Returns
-        -------
-        bool
-            True if 'id' exists in the database, False otherwise.
-
-        Raises
-        -------
-        TypeError
-            If the id is not an integer.
-        ValueError
-            If the id is not strictly positive.
-        ConnectionError
-            If the database connection fails.
-        RuntimeError
-            If an unexpected database error occurs.
-        """
-        if not isinstance(id, int):
-            raise TypeError("User id must be an integer")
-        if id <= 0:
-            raise ValueError("The user id must be positive")
-        try:
-            with self:
-                self.cursor.execute(
-                    "SELECT *          "
-                    "FROM users        "
-                    "WHERE user_id = %s     "
-                    "LIMIT 1           ",
-                    (id,),
-                )
-                user = self.cursor.fetchone()
-            return user is not None
-        except psycopg2.OperationalError as e:
-            raise ConnectionError(f"Database connection failed: {e}") from e
-        except Exception as e:
-            raise RuntimeError(f"Unexpected database error: {e}") from e
-
     # CREATE
-
     def create(self, username, email, password_hash):
         """
         Create a user in the users database.
@@ -104,6 +58,51 @@ class UserDao(AbstractDao):
             raise RuntimeError(f"Unexpected database error: {e}") from e
 
     # READ
+    def exist(self, id):
+        """
+        Verify if an id is correct and exists in the database.
+
+        Parameters
+        ----------
+        id : int
+            The id we want to check.
+
+        Returns
+        -------
+        bool
+            True if 'id' exists in the database, False otherwise.
+
+        Raises
+        -------
+        TypeError
+            If the id is not an integer.
+        ValueError
+            If the id is not strictly positive.
+        ConnectionError
+            If the database connection fails.
+        RuntimeError
+            If an unexpected database error occurs.
+        """
+        if not isinstance(id, int):
+            raise TypeError("User id must be an integer")
+        if id <= 0:
+            raise ValueError("The user id must be positive")
+        try:
+            with self:
+                self.cursor.execute(
+                    "SELECT *          "
+                    "FROM users        "
+                    "WHERE user_id = %s     "
+                    "LIMIT 1           ",
+                    (id,),
+                )
+                user = self.cursor.fetchone()
+            return user is not None
+        except psycopg2.OperationalError as e:
+            raise ConnectionError(f"Database connection failed: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"Unexpected database error: {e}") from e
+            
     def get_by_id(self, id):
         """
         Get a user in the database with its id.
@@ -335,7 +334,6 @@ class UserDao(AbstractDao):
             If an unexpected database error occurs.
         """
         if self.exist(id):
-            conn = None
             try:
                 with self:
                     self.cursor.execute(
@@ -355,6 +353,3 @@ class UserDao(AbstractDao):
                 raise ConnectionError(f"Database connection failed: {e}") from e
             except Exception as e:
                 raise RuntimeError(f"Unexpected database error: {e}") from e
-            finally:
-                if conn:
-                    conn.close()

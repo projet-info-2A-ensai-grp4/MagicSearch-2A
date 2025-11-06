@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 from dao.playerDao import PlayerDao
 from dao.cardDao import CardDao
 import hashlib
@@ -25,6 +25,7 @@ app.add_middleware(
 class Query(BaseModel):
     text: str
     limit: Optional[int] = 10
+    filters: Optional[Dict] = None  # Add filters parameter
 
 
 class CardFilterQuery(BaseModel):
@@ -56,10 +57,12 @@ async def search(query: Query):
     """
     text = query.text
     limit = min(query.limit, 50)  # Maximum 50 cards
-    print(f"Requête reçue : {text}, limit: {limit}")
+    filters = query.filters or {}
+
+    print(f"Requête reçue : {text}, limit: {limit}, filters: {filters}")
 
     try:
-        results = player_dao.natural_language_search(text, limit=limit)
+        results = player_dao.natural_language_search(text, filters=filters, limit=limit)
 
         if not results:
             return {"results": [], "message": "Aucune carte trouvée."}
@@ -132,7 +135,7 @@ async def login(user_data: UserLogin):
         user_service = UserService(
             username=user_data.username,
             email=None,
-            password_hash=user_data.password_hash
+            password_hash=user_data.password_hash,
         )
 
         user = user_service.signIn()
@@ -140,10 +143,10 @@ async def login(user_data: UserLogin):
         return {
             "message": "Login successful",
             "user": {
-                "id": user["user_id"], 
+                "id": user["user_id"],
                 "username": user["username"],
-                "email": user["email"]
-            }
+                "email": user["email"],
+            },
         }
 
     except ValueError as e:

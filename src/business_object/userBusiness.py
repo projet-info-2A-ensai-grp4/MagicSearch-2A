@@ -1,5 +1,4 @@
 from dao.userDao import UserDao
-import hashlib
 
 
 class UserBusiness:

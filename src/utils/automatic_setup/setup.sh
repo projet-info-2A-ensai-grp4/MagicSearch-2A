@@ -569,12 +569,41 @@ fi
 sleep 1
 
 # ============================================================================
-# STEP 6: Launch Services
+# STEP 6: API Configuration
 # ============================================================================
 
 echo ""
 gum style --border rounded --border-foreground 212 --padding "1 2" --margin "1 0" \
-    "$(gum style --foreground 212 '🚀 Step 6: Launch Services')"
+    "$(gum style --foreground 212 '🔗 Step 6: API Configuration')"
+
+echo ""
+gum style --foreground 147 "Configure your API URL for the frontend"
+echo ""
+
+API_URL=$(gum input --placeholder "API URL (default: http://localhost:8000)" --value "http://localhost:8000")
+
+# Create config.js file
+CONFIG_JS="$PROJECT_ROOT/src/static/config.js"
+
+cat > "$CONFIG_JS" << EOF
+// filepath: /home/victor/Work/MagicSearch-2A/src/static/config.js
+// Auto-generated API configuration
+const API_CONFIG = {
+    BASE_URL: '${API_URL}'
+};
+EOF
+
+gum style --foreground 82 "✓ API configuration saved to src/static/config.js"
+echo ""
+gum style --foreground 246 "API URL: $API_URL"
+
+# ============================================================================
+# STEP 7: Launch Services
+# ============================================================================
+
+echo ""
+gum style --border rounded --border-foreground 212 --padding "1 2" --margin "1 0" \
+    "$(gum style --foreground 212 '🚀 Step 7: Launch Services')"
 
 echo ""
 if gum confirm "Start FastAPI backend and HTTP server?"; then

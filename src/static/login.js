@@ -13,7 +13,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     const password_hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     // Préparation de la requête POST
-    const response = await fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/login", {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/login`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

@@ -1,7 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('registerForm');
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const username = document.getElementById('username').value;
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('The username cannot exceed 20 characters.')
             return;
         }
-        
+
         if (!/^[A-Za-z0-9._-]+$/.test(username)) {
             alert("The username contains unauthorized characters. Only letters, numbers, '-', '_' and '.' are allowed.");
             return;
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         try {
-            const response = await fetch('https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/register', {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

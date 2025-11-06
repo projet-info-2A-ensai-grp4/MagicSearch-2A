@@ -34,38 +34,92 @@ def test_get_card_image_url_api_error():
         assert url is None
 
 
-def test_fetch_and_update_images():
+def test_get_card_image_url_multiface_with_image():
+    fake_response = MagicMock()
+    fake_response.status_code = 200
+    fake_response.json.return_value = {
+        "data": [
+            {
+                "card_faces": [
+                    {"image_uris": {"normal": "https://fakeurl.com/face1.jpg"}}
+                ]
+            }
+        ]
+    }
+
+    with patch("requests.get", return_value=fake_response):
+        url = get_card_image_url("multi-id")
+        assert url == "https://fakeurl.com/face1.jpg"
+
+
+def test_get_card_image_url_multiface_no_image():
+    fake_response = MagicMock()
+    fake_response.status_code = 200
+    fake_response.json.return_value = {
+        "data": [{"card_faces": [{}]}]
+    }
+
+    with patch("requests.get", return_value=fake_response):
+        url = get_card_image_url("no-image-face-id")
+        assert url is None
+
+
+def test_get_card_image_url_no_image_keys():
+    fake_response = MagicMock()
+    fake_response.status_code = 200
+    fake_response.json.return_value = {
+        "data": [{"name": "No Image Card"}]
+    }
+
+    with patch("requests.get", return_value=fake_response):
+        url = get_card_image_url("no-image-key-id")
+        assert url is None
+
+
+@patch("time.sleep", return_value=None)
+def test_fetch_and_update_images(mock_sleep):
     mock_cursor = MagicMock()
     mock_conn = MagicMock()
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_conn.__enter__.return_value = mock_conn  # 🔑 assure le bon contexte
     mock_cursor.fetchall.return_value = [
         {"id": 1, "scryfall_oracle_id": "valid-id"},
         {"id": 2, "scryfall_oracle_id": "no-image-id"},
     ]
 
-
-def mock_get(url):
-    mock_resp = MagicMock()
-    if "valid-id" in url:
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "data": [{"image_uris": {"normal": "https://fakeurl.com/card.jpg"}}]
-        }
-    else:
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {"data": []}
-    return mock_resp
+    def mock_get(url):
+        mock_resp = MagicMock()
+        if "valid-id" in url:
+            mock_resp.status_code = 200
+            mock_resp.json.return_value = {
+                "data": [{"image_uris": {"normal": "https://fakeurl.com/card.jpg"}}]
+            }
+        else:
+            mock_resp.status_code = 200
+            mock_resp.json.return_value = {"data": []}
+        return mock_resp
 
     with (
         patch("psycopg2.connect", return_value=mock_conn),
         patch("requests.get", side_effect=mock_get),
     ):
         fetch_and_update_images()
-        # Vérifie que UPDATE a été appelé pour la première carte
-        mock_cursor.execute.assert_any_call(
-            "UPDATE cards\n                        SET image_url = %s\n                        WHERE id = %s;",
-            ("https://fakeurl.com/card.jpg", 1),
-        )
+
+        # ✅ Vérifie que SELECT et UPDATE ont été appelés
+        all_queries = [call[0][0] for call in mock_cursor.execute.call_args_list]
+        print("Executed queries:", all_queries)
+
+        # SELECT devrait être le premier
+        assert any("SELECT" in q for q in all_queries)
+
+        # UPDATE devrait être le second
+        update_calls = [
+            call for call in mock_cursor.execute.call_args_list if "UPDATE" in call[0][0]
+        ]
+        assert len(update_calls) == 1
+        args, kwargs = update_calls[0]
+        assert "UPDATE cards" in args[0]
+        assert args[1] == ("https://fakeurl.com/card.jpg", 1)
 
 
 if __name__ == "__main__":

@@ -75,7 +75,7 @@ document.getElementById('applyFilter').addEventListener('click', async function 
   console.log('Search with filters:', filterBody);
 
   try {
-    const res = await fetch("http://localhost:8000/search", {
+    const res = await fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(filterBody),
@@ -111,7 +111,7 @@ document.getElementById('resetFilter').addEventListener('click', function () {
       filters: {}
     };
 
-    fetch("http://localhost:8000/search", {
+    fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(filterBody),

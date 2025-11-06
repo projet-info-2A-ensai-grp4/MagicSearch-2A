@@ -28,6 +28,8 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
 
     // Vérification que l'utilisateur existe avant d'accéder à .username
     if (result.user) {
+        localStorage.setItem("access_token", result.access_token);
+
         alert("Login successful! Welcome " + result.user.username);
         window.location.href = "../pages/index.html";
     } else {

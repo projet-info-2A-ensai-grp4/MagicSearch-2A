@@ -37,7 +37,11 @@ document.getElementById("loginForm").addEventListener("submit", async function (
         }
 
         alert("Login successful! Welcome " + result.user.username);
-        window.location.href = "../pages/index.html";
+
+        // Redirect to the page the user came from, or index.html by default
+        const returnUrl = sessionStorage.getItem('login_return_url') || '../pages/index.html';
+        sessionStorage.removeItem('login_return_url');
+        window.location.href = returnUrl;
     } else {
         alert("Login failed: " + result.message);
     }

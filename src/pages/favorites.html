@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Favorites - MagicSearch</title>
+    <link rel="stylesheet" href="../static/favorites.css">
+</head>
+
+<body>
+    <header class="header-hero">
+        <div class="header-left">
+            <div class="logo">
+                <h1>MAGICSEARCH</h1>
+            </div>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="decks.html">Decks</a>
+                <a href="favorites.html">Favorites</a>
+            </nav>
+        </div>
+
+        <div class="account-links" id="accountLinks">
+            <a href="login.html" class="btn-outline">Log In</a>
+            <a href="register.html" class="btn-primary">Register</a>
+        </div>
+    </header>
+
+    <main class="favorites-main">
+        <div id="authRequired" class="auth-required">
+            <div class="auth-message">
+                <h2>Authentication Required</h2>
+                <p>You need to be logged in to view your favorites.</p>
+                <div class="auth-buttons">
+                    <a href="login.html" class="btn-primary">Log In</a>
+                    <a href="register.html" class="btn-outline">Register</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="favoritesContent" class="favorites-content" style="display: none;">
+            <div class="favorites-header">
+                <h1>My Favorite Cards</h1>
+                <p id="favoritesCount">Loading your favorites...</p>
+            </div>
+
+            <div id="loadingSpinner" class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading your favorites...</p>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-message">
+                    <h2>No favorites yet</h2>
+                    <p>Start adding cards to your favorites and they will appear here!</p>
+                    <a href="index.html" class="btn-primary">Search Cards</a>
+                </div>
+            </div>
+
+            <div id="favoritesList" class="favorites-grid">
+            </div>
+        </div>
+    </main>
+
+    <script src="../static/config.js"></script>
+    <script src="../static/favorites.js"></script>
+</body>
+
+</html>

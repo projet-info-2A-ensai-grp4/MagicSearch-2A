@@ -92,13 +92,16 @@ class FavoriteDao(AbstractDao):
         """
         with self:
             self.cursor.execute(
-                "SELECT card_id, added_at    "
-                "FROM favorites                "
-                "WHERE user_id = %s            "
-                "ORDER BY added_at DESC      ",
+                "SELECT c.id, c.name, c.image_url, f.added_at "
+                "FROM favorites f "
+                "JOIN cards c ON f.card_id = c.id "
+                "WHERE f.user_id = %s "
+                "ORDER BY f.added_at DESC",
                 (id,),
             )
-            return self.cursor.fetchall()
+            results = self.cursor.fetchall()
+            print(f"DEBUG favoriteDao.get_by_id SQL results: {results}")
+            return results
 
     # UPDATE
     def update(self, id):

@@ -14,6 +14,7 @@ Tanguy Ajas
 - [x] register system (register.js, fapi.py)
 - [x] login and JWT (login.js, fapi.py, auth.py)
 - [x] endpoints histories and favorites (protected routes (BEARER..)) (fapi.py, auth.py)
+- [x] favorites on frontend : displaying all the favorites of the connected user, making possible for them to remove/add cards from/to their favorites
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

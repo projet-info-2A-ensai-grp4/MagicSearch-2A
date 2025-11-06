@@ -76,7 +76,9 @@ def mock_user_dao():
         # SELECT ... WHERE username = %s (get_by_username)
         if q.startswith("select") and "from users" in q and "where username = %s" in q:
             username = params[0]
-            row = next((u for u in fake_users_db.values() if u["username"] == username), None)
+            row = next(
+                (u for u in fake_users_db.values() if u["username"] == username), None
+            )
             mock_cursor.fetchone.return_value = row
             mock_cursor.fetchall.return_value = [row] if row else []
             return

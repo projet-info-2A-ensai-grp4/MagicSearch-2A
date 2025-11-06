@@ -71,9 +71,7 @@ class UserService:
             raise ValueError("This username is already used")
         if not self.user.new_email(self.email):
             raise ValueError("This email is already used")
-        new_user = self.user.create(
-            self.username, self.email, self.password_hash
-        )
+        new_user = self.user.create(self.username, self.email, self.password_hash)
         return new_user
 
     def signIn(self):

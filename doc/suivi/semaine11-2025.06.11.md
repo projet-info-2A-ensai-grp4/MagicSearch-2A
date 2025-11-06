@@ -32,9 +32,10 @@ Victor Jean
 ### Nom Prénom élève 4
 Lina Louati
 - [x] update of the documentation (class diagram,table diagram...)
-- [x] card image through url function + tests (API Scryfall)
+- [x] card image through url function (API Scryfall)
 - [x] start of table of contents for the final report
 - [x] start of the final report (introduction, first parts)
+- [x] various tests 
 
 
 ### Nom Prénom élève 5

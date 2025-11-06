@@ -23,9 +23,7 @@ def mock_favorite_business():
         "card_id": 42,
     }
 
-    fav_business = FavoriteBusiness(
-        mock_favorites_dao, mock_user_dao, mock_card_dao
-    )
+    fav_business = FavoriteBusiness(mock_favorites_dao, mock_user_dao, mock_card_dao)
     return fav_business, mock_user_dao, mock_card_dao, mock_favorites_dao
 
 
@@ -49,7 +47,7 @@ def test_add_favorite_existing(mock_favorite_business):
     assert result == {"user_id": 1, "card_id": 42}
 
 
-def test_add_favorite_invalid_user(mock_favorite_business): 
+def test_add_favorite_invalid_user(mock_favorite_business):
     fav, user_dao, card_dao, fav_dao = mock_favorite_business
     user_dao.exist.return_value = False
 
@@ -94,12 +92,10 @@ def test_remove_favorite_invalid_user(mock_favorite_business):
     with pytest.raises(ValueError, match="user_id"):
         fav.remove_favorite(999, 42)
 
-   
+
 def test_remove_favorite_invalid_card(mock_favorite_business):
     fav, user_dao, card_dao, fav_dao = mock_favorite_business
     card_dao.exist.return_value = False
 
     with pytest.raises(ValueError, match="card_id"):
         fav.remove_favorite(1, 999)
-
-

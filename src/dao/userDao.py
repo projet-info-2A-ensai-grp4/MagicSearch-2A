@@ -102,7 +102,7 @@ class UserDao(AbstractDao):
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-            
+
     def get_by_id(self, id):
         """
         Get a user in the database with its id.

@@ -1,14 +1,14 @@
 from dao.abstractDao import AbstractDao
 from dao.cardDao import CardDao
 
+type
+
 
 class DeckDao(AbstractDao):
-
     columns_valid = {"deck_id", "name", "type"}
 
     def shape(self):
-        """
-        """
+        """ """
         try:
             with self:
                 sql_query = """
@@ -22,8 +22,7 @@ class DeckDao(AbstractDao):
             raise
 
     def exist(self, id):
-        """
-        """
+        """ """
         if not isinstance(id, int):
             raise TypeError("Deck ID must be an integer")
         if id < 0:
@@ -43,8 +42,7 @@ class DeckDao(AbstractDao):
             exit()
 
     def get_by_id(self, id):
-        """
-        """
+        """ """
         if self.exist(id):
             try:
                 with self:
@@ -64,34 +62,36 @@ class DeckDao(AbstractDao):
                 print(f"Error connecting to the database: {e}")
                 exit()
 
-    def create(self, *args, **kwargs):
-        if not (set(kwargs.keys()).issubset(self.columns_valid)):
-            raise ValueError(
-                f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
-            )
-        card_data = {
-            key: kwargs.get(key, None) for key in self.columns_valid if key != "deck_id"
-        }
-        # Add None for the keys None - specified.
+    def create(self, **kwargs):
         try:
+            invalid_keys = set(kwargs.keys()) - self.columns_valid
+            if invalid_keys:
+                raise ValueError(f"Invalid keys: {invalid_keys}")
+
+            # Ne pas insérer deck_id s’il est auto-généré
+            insert_data = {k: v for k, v in kwargs.items() if k != "deck_id"}
+
+            if not insert_data:
+                raise ValueError("No valid data provided for deck creation")
+
             with self:
-                columns = ", ".join(card_data.keys())
-                placeholders = ", ".join(["%s"] * len(card_data))
+                columns = ", ".join(insert_data.keys())
+                placeholders = ", ".join(["%s"] * len(insert_data))
                 sql_query = f"""
                     INSERT INTO decks ({columns})
                     VALUES ({placeholders})
                     RETURNING *;
-                    """
-                params = tuple(card_data.values())
+                """
+                params = tuple(insert_data.values())
                 self.cursor.execute(sql_query, params)
                 self.conn.commit()
-                new_card = self.cursor.fetchone()
-                return new_card
-        except Exception as e:
-            print(f"Error connecting to the database: {e}")
-            exit()
+                return self.cursor.fetchone()
 
-    def update(self, id, *args, **kwargs):
+        except Exception as e:
+            print(f"Error in DeckDao.create: {e}")
+            raise
+
+    def update(self, id, **kwargs):
         if self.exist(id):
             if not (set(kwargs.keys()).issubset(self.columns_valid)):
                 raise ValueError(
@@ -162,8 +162,7 @@ class DeckDao(AbstractDao):
             exit()
 
     def add_card_to_deck(self, deck_id: int, card_id: int):
-        """
-        """
+        """ """
         card = CardDao()
         if not card.exist(card_id):
             raise ValueError(f"Card {card_id} does not exist.")
@@ -177,7 +176,10 @@ class DeckDao(AbstractDao):
                 ON CONFLICT (deck_id, card_id)
                 DO UPDATE SET quantity = deck_cards.quantity + 1;
                 """
-                param = (deck_id, card_id,)
+                param = (
+                    deck_id,
+                    card_id,
+                )
                 self.cursor.execute(sql_query, param)
                 rows = self.cursor.fetchall()
                 return [row[0] for row in rows]
@@ -186,8 +188,7 @@ class DeckDao(AbstractDao):
             exit()
 
     def remove_card_from_deck(self, deck_id: int, card_id: int, all=False):
-        """
-        """
+        """ """
         card = CardDao()
         if not card.exist(card_id):
             raise ValueError(f"Card {card_id} does not exist.")

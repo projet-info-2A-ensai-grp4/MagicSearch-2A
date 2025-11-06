@@ -14,7 +14,7 @@ class HistoryDao(AbstractDao):
             The user id.
         prompt : str
             The research.
-        
+
         Returns
         -------
         row : dict
@@ -44,7 +44,7 @@ class HistoryDao(AbstractDao):
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-    
+
     # READ
     def exist(self, id):
         """
@@ -100,13 +100,13 @@ class HistoryDao(AbstractDao):
         ----------
         id : list[int]
             List containing the history_id.
-        
+
         Returns
         -------
         del_his : dict
             Dictionary containing the deleted line in the history:
             {'user_id': int, 'prompt': str}
-        
+
         Raises:
         -------
         ConnectionError

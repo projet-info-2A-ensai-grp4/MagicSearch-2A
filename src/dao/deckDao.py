@@ -1,7 +1,7 @@
 from dao.abstractDao import AbstractDao
 from dao.cardDao import CardDao
+from dao.playerDao import PlayerDao
 
-type
 
 class DeckDao(AbstractDao):
 
@@ -229,3 +229,39 @@ class DeckDao(AbstractDao):
         except Exception as e:
             print(f"Error in remove_card_from_deck(): {e}")
             raise
+
+    def create_user_deck(self, user_id: int, **kwargs):
+        """
+        """
+        player_dao = PlayerDao()
+        if player_dao.exist(user_id):
+            if not (set(kwargs.keys()).issubset(self.columns_valid)):
+                raise ValueError(
+                    f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
+                )
+                try:
+                    new_deck = self.create(**kwargs)
+
+                    if not new_deck or "deck_id" not in new_deck:
+                        raise ValueError("Deck creation failed — no deck_id returned.")
+
+                    deck_id = new_deck["deck_id"]
+                    with self:
+                        sql_link = """
+                        INSERT INTO user_deck_link (user_id, deck_id)
+                        VALUES (%s, %s)
+                        RETURNING *;
+                        """
+                        params = (user_id, deck_id)
+                        self.cursor.execute(sql_link, params)
+                        link_row = self.cursor.fetchone()
+                        self.conn.commit()
+                    return {
+                        "deck": new_deck,
+                        "link": link_row
+                    }
+                except Exception as e:
+                    print(f"Error in DeckDao.create_user_deck: {e}")
+                    raise
+            else:
+                return None

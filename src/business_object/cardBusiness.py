@@ -1,10 +1,73 @@
 import os
+import re
+import numpy as np
 from dotenv import load_dotenv
 from dao.cardDao import CardDao
 from services.embeddingService import EmbeddingService
 
 
 class CardBusiness:
+    # Mapping dictionaries for normalization
+    MANA_SYMBOLS = {
+        "{W}": " white",
+        "{U}": " blue",
+        "{B}": " black",
+        "{R}": " red",
+        "{G}": " green",
+        "{C}": " colorless",
+        "{T}": " tap",
+        "{Q}": " untap",
+        "{E}": " energy",
+        "{S}": " snow",
+        "{X}": " X",
+        "{Y}": " Y",
+        "{Z}": " Z",
+        # Hybrid mana
+        "{W/U}": " white or blue",
+        "{W/B}": " white or black",
+        "{U/B}": " blue or black",
+        "{U/R}": " blue or red",
+        "{B/R}": " black or red",
+        "{B/G}": " black or green",
+        "{R/G}": " red or green",
+        "{R/W}": " red or white",
+        "{G/W}": " green or white",
+        "{G/U}": " green or blue",
+        # Phyrexian mana
+        "{W/P}": " white phyrexian",
+        "{U/P}": " blue phyrexian",
+        "{B/P}": " black phyrexian",
+        "{R/P}": " red phyrexian",
+        "{G/P}": " green phyrexian",
+        # Two-brid mana (hybrid with 2)
+        "{2/W}": " two or white",
+        "{2/U}": " two or blue",
+        "{2/B}": " two or black",
+        "{2/R}": " two or red",
+        "{2/G}": " two or green",
+    }
+
+    NUMBER_WORDS = {
+        "0": "zero",
+        "1": "one",
+        "2": "two",
+        "3": "three",
+        "4": "four",
+        "5": "five",
+        "6": "six",
+        "7": "seven",
+        "8": "eight",
+        "9": "nine",
+        "10": "ten",
+        "11": "eleven",
+        "12": "twelve",
+        "13": "thirteen",
+        "14": "fourteen",
+        "15": "fifteen",
+        "16": "sixteen",
+        "20": "twenty",
+    }
+
     def __init__(
         self, dao: CardDao, card_id: int, embedding_service: EmbeddingService = None
     ):
@@ -22,95 +85,78 @@ class CardBusiness:
         attributes = ", ".join(f"{key}={getattr(self, key)}" for key in vars(self))
         return f"CardBusiness({attributes})"
 
+    @staticmethod
+    def normalize_text(text: str) -> str:
+        """
+        Normalize Magic: The Gathering card text by converting symbols to readable text.
+
+        Parameters
+        ----------
+        text : str
+            The text containing MTG symbols to normalize.
+
+        Returns
+        -------
+        str
+            The normalized text with symbols converted to words.
+        """
+        if not text:
+            return text
+
+        normalized = text
+
+        # Replace generic mana costs like {2}, {15}, etc. FIRST
+        def replace_number(match):
+            num = match.group(1)
+            return " " + CardBusiness.NUMBER_WORDS.get(num, num) + " "
+
+        normalized = re.sub(r"\{(\d+)\}", replace_number, normalized)
+
+        # Then replace mana symbols (order matters - do complex symbols first)
+        for symbol, word in sorted(
+            CardBusiness.MANA_SYMBOLS.items(), key=lambda x: len(x[0]), reverse=True
+        ):
+            normalized = normalized.replace(symbol, word + " ")
+
+        # Clean up multiple spaces
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+
+        return normalized
+
     def generate_text_to_embed2(self):
-        """Generate and update the text_to_embed attribute of a card."""
+        """Generate and update the text_to_embed attribute of a card using a template."""
         if not self.id:
             raise ValueError("Impossible to generate text_to_embed without a card ID.")
 
-        # Create a rich, natural language description optimized for embedding models
-        parts = []
+        # Build the description using the template
+        parts = [f"{self.name} is a {self.type}" if self.type else self.name]
 
-        # Core identity - name is the anchor
-        parts.append(f"Card: {self.name}")
-
-        # # Type line (critical for searching by card type)
-        if self.type:
-            parts.append(f"Type: {self.type}")
-
-        # Supertypes, types, and subtypes for granular search
-        type_parts = []
-        if self.supertypes:
-            type_parts.append(f"Supertypes: {self.supertypes}")
-        if self.types:
-            type_parts.append(f"Types: {self.types}")
-        if self.subtypes:
-            type_parts.append(f"Subtypes: {self.subtypes}")
-        if type_parts:
-            parts.append(". ".join(type_parts))
-
-        # Mana and cost (important for deck building searches)
+        # Add mana cost (normalized)
         if self.mana_cost:
-            parts.append(f"Mana cost: {self.mana_cost}")
-        if self.mana_value:
-            parts.append(f"Total mana value: {self.mana_value}")
+            normalized_mana = self.normalize_text(self.mana_cost)
+            parts.append(f"with mana cost {normalized_mana}")
 
-        # Color information (essential for color identity searches)
-        if self.colors:
-            parts.append(f"Colors: {self.colors}")
-        if self.color_identity:
-            parts.append(f"Color identity: {self.color_identity}")
-        if self.color_indicator:
-            parts.append(f"Color indicator: {self.color_indicator}")
-
-        # Card text - THE MOST IMPORTANT for semantic search
-        if self.text:
-            parts.append(f"Rules text: {self.text}")
-
-        # Combat and game stats
+        # Add power/toughness or other stats
         stats = []
         if self.power and self.toughness:
-            stats.append(f"Power/Toughness: {self.power}/{self.toughness}")
+            stats.append(f"power/toughness {self.power}/{self.toughness}")
         if self.loyalty:
-            stats.append(f"Loyalty: {self.loyalty}")
+            stats.append(f"loyalty {self.loyalty}")
         if self.defense:
-            stats.append(f"Defense: {self.defense}")
+            stats.append(f"defense {self.defense}")
         if stats:
-            parts.append(". ".join(stats))
+            parts.append(f"and {', '.join(stats)}")
 
-        # Keywords (crucial for mechanic searches)
-        # Note: Embedding models may not know MTG keyword meanings without context.
-        # Consider fetching keyword rules from Scryfall API or MTG Comprehensive Rules.
-        # For now, we list them to help the model learn associations through usage patterns.
+        text_description = " ".join(parts) + "."
+
+        # Add abilities/rules text (normalized)
+        if self.text:
+            normalized_text = self.normalize_text(self.text)
+            text_description += f" It has the following abilities: {normalized_text}."
+
+        # Add keywords
         if self.keywords:
-            parts.append(f"Keywords: {self.keywords}")
-            # TODO: Enhance with keyword descriptions from a keyword glossary
-            # Example: "Flying (This creature can't be blocked except by creatures with flying or reach)"
-
-        # Format and legality indicators
-        if self.subsets:
-            parts.append(f"Subsets: {self.subsets}")
-
-        # Special properties
-        special = []
-        if self.is_reserved:
-            special.append("Reserved List card")
-        if self.is_funny:
-            special.append("Un-set or funny card")
-        if self.has_alternative_deck_limit:
-            special.append("Alternative deck limit")
-        if special:
-            parts.append(". ".join(special))
-
-        # Layout info for split/flip/transform cards
-        if self.layout and self.layout not in ["normal", "token"]:
-            parts.append(f"Layout: {self.layout}")
-        if self.face_name and self.face_name != self.name:
-            parts.append(f"Other face: {self.face_name}")
-
-        # Join into natural, flowing text
-        text_description = ". ".join(filter(None, parts))
-        if not text_description.endswith("."):
-            text_description += "."
+            text_description += f" Keywords include: {self.keywords}."
 
         self.text_to_embed = text_description
 
@@ -119,7 +165,7 @@ class CardBusiness:
 
         return self.text_to_embed
 
-    def vectorize(self, text: str = None) -> list:
+    def vectorize(self, text: str = None, normalize: bool = True) -> list:
         """
         Vectorize the given text (or text_to_embed if text is None).
 
@@ -127,6 +173,8 @@ class CardBusiness:
         ----------
         text : str, optional
             The text to vectorize. If None, uses self.text_to_embed.
+        normalize : bool, optional
+            Whether to normalize the embedding vector to unit length. Default is True.
 
         Returns
         -------
@@ -139,6 +187,13 @@ class CardBusiness:
 
         self.embedding = self.embedding_service.vectorize(text_to_vectorize)
 
+        # Normalize the embedding if requested
+        if normalize and self.embedding:
+            embedding_array = np.array(self.embedding)
+            norm = np.linalg.norm(embedding_array)
+            if norm > 0:
+                self.embedding = (embedding_array / norm).tolist()
+
         with self.dao:
             self.dao.edit_vector(self.embedding, self.id)
 
@@ -150,10 +205,11 @@ if __name__ == "__main__":
         # print(dao.get_by_id(420))
 
         try:
-            business = CardBusiness(dao, 412)
+            business = CardBusiness(dao, 3)
             business.generate_text_to_embed2()
             print(business.text_to_embed)
             embedding = business.vectorize()
+            print(business.embedding[:10])
 
         except ValueError as e:
             print(f"Error: {e}")

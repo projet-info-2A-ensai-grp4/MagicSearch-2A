@@ -4,10 +4,10 @@ from dao.cardDao import CardDao
 
 
 class FavoriteBusiness:
-    def __init__(self):
-        self.favorites = FavoritesDao()
-        self.user = UserDao()
-        self.card = CardDao()
+    def __init__(self, favorites_dao, user_dao, card_dao):
+        self.favorites = favorites_dao
+        self.user = user_dao
+        self.card = card_dao
     
     def add_favorite(self, user_id, card_id):
         """

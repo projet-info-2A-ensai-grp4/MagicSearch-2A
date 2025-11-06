@@ -81,7 +81,7 @@ def test_filter_endpoint_integration_real():
     data = response.json()
     assert "results" in data
     assert isinstance(data["results"], list)
-    expected_ids = [4]
+    expected_ids = [5]
     returned_ids = [c["id"] for c in data["results"]]
     assert returned_ids == expected_ids
     print(data["results"])

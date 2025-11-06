@@ -1,8 +1,9 @@
-document.getElementById("loginForm").addEventListener("submit", async function(event) {
+document.getElementById("loginForm").addEventListener("submit", async function (event) {
     event.preventDefault(); // empêche le rechargement de la page
 
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
+    const rememberMe = document.getElementById("rememberMe")?.checked || false;
 
     // Hash du mot de passe en SHA-256 (comme côté FastAPI)
     const encoder = new TextEncoder();
@@ -28,7 +29,12 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
 
     // Vérification que l'utilisateur existe avant d'accéder à .username
     if (result.user) {
-        localStorage.setItem("access_token", result.access_token);
+        // Store token based on "Remember Me" checkbox
+        if (rememberMe) {
+            localStorage.setItem("access_token", result.access_token);
+        } else {
+            sessionStorage.setItem("access_token", result.access_token);
+        }
 
         alert("Login successful! Welcome " + result.user.username);
         window.location.href = "../pages/index.html";

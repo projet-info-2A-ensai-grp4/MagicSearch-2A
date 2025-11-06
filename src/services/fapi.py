@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 from dao.playerDao import PlayerDao
 from dao.cardDao import CardDao
+from dao.userDao import UserDao
 import hashlib
 from services.userService import UserService
 
@@ -103,7 +104,7 @@ async def register(user_data: UserRegistration):
     try:
         password_hash = hashlib.sha256(user_data.password.encode()).hexdigest()
 
-        user_service = UserService(user_data.username, user_data.email, password_hash)
+        user_service = UserService(user_data.username, user_data.email, password_hash, UserDao())
 
         new_user = user_service.signUp()
 
@@ -136,6 +137,7 @@ async def login(user_data: UserLogin):
             username=user_data.username,
             email=None,
             password_hash=user_data.password_hash,
+            user_dao=UserDao(),
         )
 
         user = user_service.signIn()

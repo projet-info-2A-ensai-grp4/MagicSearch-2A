@@ -6,9 +6,5 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
 
     uvicorn.run(
-        "services.fapi:app",
-        host=host,
-        port=port,
-        reload=True,
-        log_level="info"
+        "services.fapi:app", host=host, port=port, reload=True, log_level="info"
     )

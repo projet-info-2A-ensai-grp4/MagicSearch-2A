@@ -31,6 +31,7 @@ Lina Louati
 - [x] update of the documentation (class diagram,table diagram...)
 - [x] card image through url function + tests (API Scryfall)
 - [x] start of table of contents for the final report
+- [x] start of the final report (introduction, first parts)
 
 
 ### Nom Prénom élève 5

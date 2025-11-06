@@ -160,7 +160,9 @@ def test_generate_text_to_embed2_no_id():
     card = CardBusiness(mock_dao, 1)
     card.id = None
 
-    with pytest.raises(ValueError, match="Impossible to generate text_to_embed without a card ID."):
+    with pytest.raises(
+        ValueError, match="Impossible to generate text_to_embed without a card ID."
+    ):
         card.generate_text_to_embed2()
 
 
@@ -225,9 +227,7 @@ def test_vectorize_with_text_to_embed():
     mock_dao.__enter__ = Mock(return_value=mock_dao)
     mock_dao.__exit__ = Mock(return_value=False)
     mock_dao.get_by_id.return_value = create_mock_card_data(
-        1,
-        name="Test Card",
-        text_to_embed="Embedded text"
+        1, name="Test Card", text_to_embed="Embedded text"
     )
     mock_dao.edit_vector = Mock()
 
@@ -261,9 +261,7 @@ def test_repr():
     mock_dao.__enter__ = Mock(return_value=mock_dao)
     mock_dao.__exit__ = Mock(return_value=False)
     mock_dao.get_by_id.return_value = create_mock_card_data(
-        1,
-        name="Lightning Bolt",
-        type="Instant"
+        1, name="Lightning Bolt", type="Instant"
     )
 
     card = CardBusiness(mock_dao, 1)

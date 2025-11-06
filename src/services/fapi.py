@@ -24,6 +24,7 @@ app.add_middleware(
 
 class Query(BaseModel):
     text: str
+    limit: Optional[int] = 10
 
 
 class CardFilterQuery(BaseModel):
@@ -43,16 +44,22 @@ class UserRegistration(BaseModel):
     password: str
 
 
+class UserLogin(BaseModel):
+    username: str
+    password_hash: str
+
+
 @app.post("/search")
 async def search(query: Query):
     """
     Endpoint pour effectuer une recherche sémantique sur les cartes Magic.
     """
     text = query.text
-    print(f"Requête reçue : {text}")
+    limit = min(query.limit, 50)  # Maximum 50 cards
+    print(f"Requête reçue : {text}, limit: {limit}")
 
     try:
-        results = player_dao.natural_language_search(text, limit=5)
+        results = player_dao.natural_language_search(text, limit=limit)
 
         if not results:
             return {"results": [], "message": "Aucune carte trouvée."}
@@ -67,7 +74,6 @@ async def search(query: Query):
 @app.post("/filter")
 async def filter(query: CardFilterQuery):
     try:
-
         filter_kwargs = {}
         if query.colors:
             filter_kwargs["colors"] = query.colors
@@ -78,7 +84,8 @@ async def filter(query: CardFilterQuery):
         if query.mana_value__lte:
             filter_kwargs["mana_value__lte"] = query.mana_value__lte
         results = card_dao.filter(
-            query.order_by, query.asc, query.limit, query.offset, **filter_kwargs)
+            query.order_by, query.asc, query.limit, query.offset, **filter_kwargs
+        )
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /search : {e}")
@@ -93,9 +100,7 @@ async def register(user_data: UserRegistration):
     try:
         password_hash = hashlib.sha256(user_data.password.encode()).hexdigest()
 
-        user_service = UserService(user_data.username,
-                                   user_data.email,
-                                   password_hash)
+        user_service = UserService(user_data.username, user_data.email, password_hash)
 
         new_user = user_service.signUp()
 
@@ -104,8 +109,8 @@ async def register(user_data: UserRegistration):
             "user": {
                 "id": new_user["id"],
                 "username": new_user["username"],
-                "email": new_user["email"]
-            }
+                "email": new_user["email"],
+            },
         }
     except ValueError as e:
         error_message = str(e)
@@ -118,4 +123,32 @@ async def register(user_data: UserRegistration):
 
     except Exception as e:
         print(f"Erreur dans /register : {e}")
+        return {"error": "SERVER_ERROR", "message": "Une erreur serveur est survenue"}
+
+
+@app.post("/login")
+async def login(user_data: UserLogin):
+    try:
+        user_service = UserService(
+            username=user_data.username,
+            email=None,
+            password_hash=user_data.password_hash
+        )
+
+        user = user_service.signIn()
+
+        return {
+            "message": "Login successful",
+            "user": {
+                "id": user["user_id"], 
+                "username": user["username"],
+                "email": user["email"]
+            }
+        }
+
+    except ValueError as e:
+        return {"error": "INVALID_CREDENTIALS", "message": str(e)}
+
+    except Exception as e:
+        print(f"Erreur dans /login : {e}")
         return {"error": "SERVER_ERROR", "message": "Une erreur serveur est survenue"}

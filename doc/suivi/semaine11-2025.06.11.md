@@ -15,6 +15,7 @@ Tanguy Ajas
 - [x] login and JWT (login.js, fapi.py, auth.py)
 - [x] endpoints histories and favorites (protected routes (BEARER..)) (fapi.py, auth.py)
 - [x] favorites on frontend : displaying all the favorites of the connected user, making possible for them to remove/add cards from/to their favorites
+- [x] improving frontend : index.html now looks way better
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

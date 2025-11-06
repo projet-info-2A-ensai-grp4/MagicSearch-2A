@@ -64,32 +64,35 @@ class DeckDao(AbstractDao):
                 print(f"Error connecting to the database: {e}")
                 exit()
 
-    def create(self, *args, **kwargs):
-        if not (set(kwargs.keys()).issubset(self.columns_valid)):
-            raise ValueError(
-                f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
-            )
-        card_data = {
-            key: kwargs.get(key, None) for key in self.columns_valid if key != "deck_id"
-        }
-        # Add None for the keys None - specified.
+    def create(self, **kwargs):
         try:
+            # Vérifie que toutes les clés envoyées sont valides
+            invalid_keys = set(kwargs.keys()) - self.columns_valid
+            if invalid_keys:
+                raise ValueError(f"Invalid keys: {invalid_keys}")
+
+            # Ne pas insérer deck_id s’il est auto-généré
+            insert_data = {k: v for k, v in kwargs.items() if k != "deck_id"}
+
+            if not insert_data:
+                raise ValueError("No valid data provided for deck creation")
+
             with self:
-                columns = ", ".join(card_data.keys())
-                placeholders = ", ".join(["%s"] * len(card_data))
+                columns = ", ".join(insert_data.keys())
+                placeholders = ", ".join(["%s"] * len(insert_data))
                 sql_query = f"""
                     INSERT INTO decks ({columns})
                     VALUES ({placeholders})
                     RETURNING *;
-                    """
-                params = tuple(card_data.values())
+                """
+                params = tuple(insert_data.values())
                 self.cursor.execute(sql_query, params)
                 self.conn.commit()
-                new_card = self.cursor.fetchone()
-                return new_card
+                return self.cursor.fetchone()
+
         except Exception as e:
-            print(f"Error connecting to the database: {e}")
-            exit()
+            print(f"Error in DeckDao.create: {e}")
+            raise
 
     def update(self, id, *args, **kwargs):
         if self.exist(id):

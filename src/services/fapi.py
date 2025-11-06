@@ -110,7 +110,7 @@ async def register(user_data: UserRegistration):
         return {
             "message": "User registered successfully",
             "user": {
-                "id": new_user["id"],
+                "id": new_user["user_id"],
                 "username": new_user["username"],
                 "email": new_user["email"],
             },

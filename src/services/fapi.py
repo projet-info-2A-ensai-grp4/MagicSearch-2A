@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException, Path
+from fastapi import FastAPI, Query, HTTPException, Path, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
@@ -9,6 +9,11 @@ import hashlib
 from services.userService import UserService
 from dao.deckDao import DeckDao
 from utils.auth import create_access_token
+from utils.auth import get_current_user
+from dao.favoriteDao import FavoriteDao
+from business_object.favoriteBusiness import FavoriteBusiness
+from dao.historyDao import HistoryDao
+from business_object.historyBusiness import HistoryBusiness
 
 
 app = FastAPI(
@@ -26,7 +31,7 @@ app = FastAPI(
     
     ## Authentication
     
-    Some endpoints require authentication using JWT tokens obtained from the `/login` endpoint.
+    Protected endpoints require authentication using JWT tokens obtained from the `/login` endpoint.
     """,
     version="1.0.0",
     contact={
@@ -41,6 +46,11 @@ app = FastAPI(
 player_dao = PlayerDao()
 card_dao = CardDao()
 deck_dao = DeckDao()
+favorite_dao = FavoriteDao()
+user_dao = UserDao()
+favorite_business = FavoriteBusiness(favorite_dao, user_dao, card_dao)
+history_dao = HistoryDao()
+history_business = HistoryBusiness(history_dao, user_dao)
 
 
 app.add_middleware(
@@ -138,6 +148,14 @@ class DeckreadingQuery(BaseModel):
 class DeckaddCardQuery(BaseModel):
     deck_id: int = Field(..., gt=0, description="Deck ID")
     card_id: int = Field(..., gt=0, description="Card ID to add")
+
+
+class FavoriteAction(BaseModel):
+    card_id: int
+
+
+class HistoryAction(BaseModel):
+    prompt: str = Field(..., description="Search text to store in history")
 
 
 @app.post(
@@ -543,4 +561,64 @@ async def remove_card_deck(
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/card/remove : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/favorite/add", tags=["Favorite"])
+async def add_to_favorites(fav: FavoriteAction, current_user: dict = Depends(get_current_user)):
+    try:
+        result = favorite_business.add_favorite(current_user["user_id"], fav.card_id)
+        return {"message": "Added to favorites", "favorite": result}
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/favorite/remove", tags=["Favorite"])
+async def remove_from_favorites(fav: FavoriteAction, current_user: dict = Depends(get_current_user)):
+    try:
+        result = favorite_business.remove_favorite(current_user["user_id"], fav.card_id)
+        return {"message": "Removed from favorites", "favorite": result}
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/favorite", tags=["Favorite"])
+async def list_favorites(current_user: dict = Depends(get_current_user)):
+    try:
+        user_id = current_user["user_id"]
+        favorites = favorite_business.favorite.get_by_id(user_id)
+        return {"user_id": user_id, "favorites": favorites}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/history/add", tags=["History"])
+async def add_history(entry: HistoryAction, current_user: dict = Depends(get_current_user)):
+    try:
+        result = history_business.add(current_user["user_id"], entry.prompt)
+        return {"message": "Added to history", "history": result}
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/history", tags=["History"])
+async def list_history(current_user: dict = Depends(get_current_user)):
+    try:
+        user_id = current_user["user_id"]
+        hist = history_business.history.get_by_id(user_id)
+        return {"user_id": user_id, "history": hist}
+
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -2,7 +2,7 @@ from dao.historyDao import HistoryDao
 from dao.userDao import UserDao
 
 
-class History():
+class HistoryBusiness():
     def __init__(self, history_dao: HistoryDao, user_dao: UserDao):
         self.history = history_dao
         self.user = user_dao

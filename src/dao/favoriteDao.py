@@ -92,10 +92,10 @@ class FavoriteDao(AbstractDao):
         """
         with self:
             self.cursor.execute(
-                "SELECT card_id, created_at    "
+                "SELECT card_id, added_at    "
                 "FROM favorites                "
                 "WHERE user_id = %s            "
-                "ORDER BY created_at DESC      ",
+                "ORDER BY added_at DESC      ",
                 (id,),
             )
             return self.cursor.fetchall()

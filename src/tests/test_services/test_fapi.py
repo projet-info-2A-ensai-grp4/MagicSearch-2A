@@ -81,7 +81,7 @@ def test_filter_endpoint_integration_real():
     data = response.json()
     assert "results" in data
     assert isinstance(data["results"], list)
-    #verify the structure and logical content
+    # verify the structure and logical content
     assert len(data["results"]) >= 1
     card = data["results"][0]
     assert all(key in card for key in ["id", "name", "colors", "type", "text"])

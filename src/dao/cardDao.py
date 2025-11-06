@@ -357,27 +357,21 @@ class CardDao(AbstractDao):
             raise ValueError("Card ID must be a positive integer")
 
         try:
-            # Execute the update query
-            query = sql.SQL("UPDATE cards SET text_to_embed = %s WHERE id = %s")
-            self.cursor.execute(query, (embed_me, card_id))
-            self.conn.commit()
+            with self:
+                # Execute the update query
+                query = sql.SQL("UPDATE cards SET text_to_embed = %s WHERE id = %s")
+                self.cursor.execute(query, (embed_me, card_id))
+                self.conn.commit()
 
-            # Check if any rows were updated
-            if self.cursor.rowcount == 0:
-                raise ValueError(
-                    f"No card found with ID {card_id}. No rows were updated."
-                )
+                # Check if the update was successful
+                if self.cursor.rowcount == 0:
+                    raise ValueError(f"No card found with ID {card_id}")
 
-            return self.cursor.rowcount
+                return self.cursor.rowcount
 
-        except psycopg2.Error as e:
-            # Rollback in case of database error
-            self.conn.rollback()
-            # Add more specific error message
-            raise psycopg2.Error(
-                f"Database error while updating text_to_embed for card ID "
-                f"{card_id}: {str(e)}"
-            )
+        except Exception as e:
+            print(f"Error updating text_to_embed: {e}")
+            raise
 
     def edit_vector(self, vector_me: list, card_id: int) -> int:
         """Edit the embedding vector of a card.
@@ -407,26 +401,21 @@ class CardDao(AbstractDao):
             raise ValueError("card_id must be a positive integer")
 
         try:
-            # Execute the update query
-            query = sql.SQL("UPDATE cards SET embedding = %s WHERE id = %s")
-            self.cursor.execute(query, (vector_me, card_id))
-            self.conn.commit()
+            with self:
+                # Execute the update query
+                query = sql.SQL("UPDATE cards SET embedding = %s WHERE id = %s")
+                self.cursor.execute(query, (vector_me, card_id))
+                self.conn.commit()
 
-            # Check if any rows were updated
-            if self.cursor.rowcount == 0:
-                raise ValueError(
-                    f"No card found with ID {card_id}. No rows were updated."
-                )
-            return self.cursor.rowcount
+                # Check if the update was successful
+                if self.cursor.rowcount == 0:
+                    raise ValueError(f"No card found with ID {card_id}")
 
-        except psycopg2.Error as e:
-            # Rollback in case of database error
-            self.conn.rollback()
-            # Add more specific error message
-            raise psycopg2.Error(
-                f"Database error while updating embedding for card ID "
-                f"{card_id}: {str(e)}"
-            )
+                return self.cursor.rowcount
+
+        except Exception as e:
+            print(f"Error updating embedding: {e}")
+            raise
 
     def filter(
         self,
@@ -567,6 +556,89 @@ class CardDao(AbstractDao):
     def precomputed_tag_search():
         """Search using pre-labeled categories like removal, ramp, draw"""
         pass
+
+    def search_by_name(self, name: str, limit: int = 20, offset: int = 0):
+        """
+        Search for cards by partial or exact name match (case-insensitive).
+
+        Parameters
+        ----------
+        name : str
+            The card name or partial name to search for.
+        limit : int, optional
+            Maximum number of results to return (default: 20).
+        offset : int, optional
+            Number of results to skip for pagination (default: 0).
+
+        Returns
+        -------
+        list[dict]
+            List of cards matching the search criteria.
+
+        Raises
+        ------
+        ValueError
+            If name is empty or limit/offset are invalid.
+        """
+        if not name or not name.strip():
+            raise ValueError("Search name cannot be empty")
+        if limit <= 0:
+            raise ValueError("Limit must be positive")
+        if offset < 0:
+            raise ValueError("Offset must be non-negative")
+
+        try:
+            with self:
+                # Use ILIKE for case-insensitive partial matching
+                sql_query = """
+                    SELECT id, name, ascii_name, type, mana_cost, mana_value, 
+                           text, colors, color_identity, image_url
+                    FROM cards
+                    WHERE name ILIKE %s OR ascii_name ILIKE %s
+                    ORDER BY name
+                    LIMIT %s OFFSET %s;
+                """
+                search_pattern = f"%{name}%"
+                params = (search_pattern, search_pattern, limit, offset)
+
+                self.cursor.execute(sql_query, params)
+                return self.cursor.fetchall()
+
+        except Exception as e:
+            print(f"Error searching cards by name: {e}")
+            raise
+
+    def get_random_card(self):
+        """
+        Retrieve a random card from the database.
+
+        Returns
+        -------
+        dict
+            A randomly selected card with all its attributes.
+            Returns None if no cards exist in the database.
+
+        Raises
+        ------
+        Exception
+            If a database error occurs.
+        """
+        try:
+            with self:
+                sql_query = """
+                    SELECT id, name, ascii_name, type, mana_cost, mana_value,
+                           text, colors, color_identity, image_url, layout,
+                           power, toughness, loyalty, keywords
+                    FROM cards
+                    ORDER BY RANDOM()
+                    LIMIT 1;
+                """
+                self.cursor.execute(sql_query)
+                return self.cursor.fetchone()
+
+        except Exception as e:
+            print(f"Error retrieving random card: {e}")
+            raise
 
 
 if __name__ == "__main__":

@@ -3,13 +3,12 @@ from dao.cardDao import CardDao
 from dao.playerDao import PlayerDao
 
 
-class DeckDao(AbstractDao):
 
+class DeckDao(AbstractDao):
     columns_valid = {"deck_id", "name", "type"}
 
     def shape(self):
-        """
-        """
+        """ """
         try:
             with self:
                 sql_query = """
@@ -23,8 +22,7 @@ class DeckDao(AbstractDao):
             raise
 
     def exist(self, id):
-        """
-        """
+        """ """
         if not isinstance(id, int):
             raise TypeError("Deck ID must be an integer")
         if id < 0:
@@ -44,8 +42,7 @@ class DeckDao(AbstractDao):
             exit()
 
     def get_by_id(self, id):
-        """
-        """
+        """ """
         if self.exist(id):
             try:
                 with self:
@@ -165,8 +162,7 @@ class DeckDao(AbstractDao):
             exit()
 
     def add_card_to_deck(self, deck_id: int, card_id: int):
-        """
-        """
+        """ """
         card = CardDao()
         if not card.exist(card_id):
             raise ValueError(f"Card {card_id} does not exist.")
@@ -180,7 +176,10 @@ class DeckDao(AbstractDao):
                 ON CONFLICT (deck_id, card_id)
                 DO UPDATE SET quantity = deck_cards.quantity + 1;
                 """
-                param = (deck_id, card_id,)
+                param = (
+                    deck_id,
+                    card_id,
+                )
                 self.cursor.execute(sql_query, param)
                 rows = self.cursor.fetchall()
                 return [row[0] for row in rows]
@@ -189,8 +188,7 @@ class DeckDao(AbstractDao):
             exit()
 
     def remove_card_from_deck(self, deck_id: int, card_id: int, all=False):
-        """
-        """
+        """ """
         card = CardDao()
         if not card.exist(card_id):
             raise ValueError(f"Card {card_id} does not exist.")

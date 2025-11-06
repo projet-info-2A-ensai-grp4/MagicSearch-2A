@@ -60,4 +60,3 @@ class FavoriteBusiness:
             raise ValueError("This favorite_id does not exist")
         row = self.favorites.delete([user_id, card_id])
         return row
-        

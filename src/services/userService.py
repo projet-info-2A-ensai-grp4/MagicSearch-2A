@@ -2,11 +2,11 @@ from dao.userDao import UserDao
 
 
 class UserService:
-    def __init__(self, username, email, password_hash):
+    def __init__(self, username, email, password_hash, user_dao):
         self.username = username
         self.email = email
         self.password_hash = password_hash
-        self.actual_user = UserDao()
+        self.user = user_dao
 
     def valid_username(self):
         """
@@ -67,11 +67,11 @@ class UserService:
         """
         if not self.valid_username():
             raise ValueError("This username is not valid")
-        if self.actual_user.get_by_username(self.username) is not None:
+        if self.user.get_by_username(self.username) is not None:
             raise ValueError("This username is already used")
-        if not self.actual_user.new_email(self.email):
+        if not self.user.new_email(self.email):
             raise ValueError("This email is already used")
-        new_user = self.actual_user.create(
+        new_user = self.user.create(
             self.username, self.email, self.password_hash
         )
         return new_user
@@ -98,7 +98,7 @@ class UserService:
         ValueError :
             If the username does not exist in the database.
         """
-        user = self.actual_user.get_by_username(self.username)
+        user = self.user.get_by_username(self.username)
         if user is None:
             raise ValueError("This username does not exist")
         if user["password_hash"] != self.password_hash:

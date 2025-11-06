@@ -5,7 +5,23 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Store return URL for login redirect
     setupLoginLinks();
+
+    // Setup scroll indicator
+    setupScrollIndicator();
 });
+
+// Setup scroll indicator to scroll to favorites section
+function setupScrollIndicator() {
+    const scrollIndicator = document.querySelector('.scroll-indicator');
+    if (scrollIndicator) {
+        scrollIndicator.addEventListener('click', () => {
+            const favoritesSection = document.querySelector('.favorites-section');
+            if (favoritesSection) {
+                favoritesSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    }
+}
 
 // Setup login links to remember the current page
 function setupLoginLinks() {
@@ -83,6 +99,12 @@ function showAuthRequired() {
     document.getElementById('loadingSpinner').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('favoritesList').innerHTML = '';
+
+    // Hide the stats counter when not authenticated
+    const statsSection = document.querySelector('.favorites-stats');
+    if (statsSection) {
+        statsSection.style.display = 'none';
+    }
 }
 
 async function loadFavorites(token) {
@@ -90,6 +112,12 @@ async function loadFavorites(token) {
     document.getElementById('loadingSpinner').style.display = 'flex';
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('favoritesList').innerHTML = '';
+
+    // Show the stats section when loading favorites
+    const statsSection = document.querySelector('.favorites-stats');
+    if (statsSection) {
+        statsSection.style.display = 'flex';
+    }
 
     try {
         const response = await fetch(`${API_CONFIG.BASE_URL}/favorite`, {

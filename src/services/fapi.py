@@ -7,7 +7,7 @@ from dao.cardDao import CardDao
 from dao.userDao import UserDao
 import hashlib
 from services.userService import UserService
-from services.auth import create_access_token
+from utils.auth import create_access_token
 
 
 app = FastAPI()

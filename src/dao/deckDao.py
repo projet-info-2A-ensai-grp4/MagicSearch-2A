@@ -1,6 +1,7 @@
 from dao.abstractDao import AbstractDao
 from dao.cardDao import CardDao
 
+type
 
 class DeckDao(AbstractDao):
 
@@ -66,7 +67,6 @@ class DeckDao(AbstractDao):
 
     def create(self, **kwargs):
         try:
-            # Vérifie que toutes les clés envoyées sont valides
             invalid_keys = set(kwargs.keys()) - self.columns_valid
             if invalid_keys:
                 raise ValueError(f"Invalid keys: {invalid_keys}")
@@ -94,7 +94,7 @@ class DeckDao(AbstractDao):
             print(f"Error in DeckDao.create: {e}")
             raise
 
-    def update(self, id, *args, **kwargs):
+    def update(self, id, **kwargs):
         if self.exist(id):
             if not (set(kwargs.keys()).issubset(self.columns_valid)):
                 raise ValueError(

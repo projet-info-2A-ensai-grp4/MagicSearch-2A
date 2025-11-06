@@ -206,7 +206,7 @@ async def reading_deck(query: DeckreadingQuery):
 @app.post("/deck/create")
 async def create_deck(query: DeckcreateQuery):
     try:
-        results = deck_dao.create(deck_id=query.deck_name, name=query.deck_type)
+        results = deck_dao.create(name=query.deck_name, type=query.deck_type)
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/create : {e}")
@@ -216,7 +216,7 @@ async def create_deck(query: DeckcreateQuery):
 @app.put("/deck/update")
 async def update_deck(query: DeckupdateQuery):
     try:
-        results = deck_dao.update(query.deck_id, query.deck_name, query.deck_type)
+        results = deck_dao.update(query.deck_id, name=query.deck_name, type=query.deck_type)
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/update : {e}")

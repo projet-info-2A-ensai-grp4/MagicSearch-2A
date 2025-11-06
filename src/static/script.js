@@ -2,7 +2,7 @@
 
 // Selected filters state
 let selectedColors = [];
-let lastSearchQuery = ''; // Store the last search query
+let lastSearchQuery = '';
 
 // Search functionality
 document.querySelector(".search-bar").addEventListener("submit", async (e) => {
@@ -10,7 +10,6 @@ document.querySelector(".search-bar").addEventListener("submit", async (e) => {
   const input = e.target.querySelector("input");
   const limit = parseInt(document.getElementById('filterLimit').value) || 8;
 
-  // Store the query before clearing
   lastSearchQuery = input.value;
 
   const res = await fetch("http://localhost:8000/search", {
@@ -21,8 +20,6 @@ document.querySelector(".search-bar").addEventListener("submit", async (e) => {
 
   const data = await res.json();
   displayResults(data);
-  // Don't clear the input anymore - keep it for filter application
-  // input.value = "";
 });
 
 // Filter toggle
@@ -48,31 +45,23 @@ document.querySelectorAll('.color-btn').forEach(btn => {
 
 // Apply filters
 document.getElementById('applyFilter').addEventListener('click', async function () {
-  // Use the stored last search query
-  const searchInput = lastSearchQuery.trim();
-
-  // If there's a search query, use semantic search with filters
-  // Otherwise, use the regular filter endpoint
-  if (searchInput) {
-    await applySemanticSearchWithFilters(searchInput);
-  } else {
-    await applyStructuredFilters();
+  if (!lastSearchQuery.trim()) {
+    alert('Please perform a search first!');
+    return;
   }
-});
 
-// New function: Semantic search with filters
-async function applySemanticSearchWithFilters(query) {
   const filterBody = {
-    text: query,
+    text: lastSearchQuery,
+    limit: parseInt(document.getElementById('filterLimit').value) || 8,
     filters: {}
   };
 
-  // Colors
+  // Add colors filter if any are selected
   if (selectedColors.length > 0) {
     filterBody.filters.colors = selectedColors;
   }
 
-  // Mana value
+  // Add mana value filters
   const manaMin = document.getElementById('manaMin').value;
   const manaMax = document.getElementById('manaMax').value;
 
@@ -83,10 +72,7 @@ async function applySemanticSearchWithFilters(query) {
     filterBody.filters.mana_value__lte = parseInt(manaMax);
   }
 
-  // Limit
-  filterBody.limit = parseInt(document.getElementById('filterLimit').value) || 8;
-
-  console.log('Semantic search with filters:', filterBody);
+  console.log('Search with filters:', filterBody);
 
   try {
     const res = await fetch("http://localhost:8000/search", {
@@ -98,53 +84,9 @@ async function applySemanticSearchWithFilters(query) {
     const data = await res.json();
     displayResults(data);
   } catch (error) {
-    console.error('Search error:', error);
-  }
-}
-
-// Existing structured filter function (rename for clarity)
-async function applyStructuredFilters() {
-  const filterBody = {};
-
-  // Colors
-  if (selectedColors.length > 0) {
-    filterBody.colors = selectedColors;
-  }
-
-  // Mana value
-  const manaMin = document.getElementById('manaMin').value;
-  const manaMax = document.getElementById('manaMax').value;
-
-  if (manaMin) {
-    filterBody.mana_value__gte = parseInt(manaMin);
-  }
-  if (manaMax) {
-    filterBody.mana_value__lte = parseInt(manaMax);
-  }
-
-  // Always sort by id, ascending (default)
-  filterBody.order_by = 'id';
-  filterBody.asc = true;
-
-  // Limit
-  filterBody.limit = parseInt(document.getElementById('filterLimit').value) || 8;
-  filterBody.offset = 0;
-
-  console.log('Filter request:', filterBody);
-
-  try {
-    const res = await fetch("http://localhost:8000/filter", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filterBody),
-    });
-
-    const data = await res.json();
-    displayResults(data);
-  } catch (error) {
     console.error('Filter error:', error);
   }
-}
+});
 
 // Reset filters
 document.getElementById('resetFilter').addEventListener('click', function () {
@@ -161,9 +103,21 @@ document.getElementById('resetFilter').addEventListener('click', function () {
   // Reset limit
   document.getElementById('filterLimit').value = 8;
 
-  // Re-run search with original query if it exists
+  // Re-run original search without filters
   if (lastSearchQuery) {
-    applySemanticSearchWithFilters(lastSearchQuery);
+    const filterBody = {
+      text: lastSearchQuery,
+      limit: 8,
+      filters: {}
+    };
+
+    fetch("http://localhost:8000/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(filterBody),
+    })
+      .then(res => res.json())
+      .then(data => displayResults(data));
   }
 });
 

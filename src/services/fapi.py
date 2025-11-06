@@ -24,6 +24,7 @@ app.add_middleware(
 
 class Query(BaseModel):
     text: str
+    limit: Optional[int] = 10
 
 
 class CardFilterQuery(BaseModel):
@@ -54,10 +55,11 @@ async def search(query: Query):
     Endpoint pour effectuer une recherche sémantique sur les cartes Magic.
     """
     text = query.text
-    print(f"Requête reçue : {text}")
+    limit = min(query.limit, 50)  # Maximum 50 cards
+    print(f"Requête reçue : {text}, limit: {limit}")
 
     try:
-        results = player_dao.natural_language_search(text, limit=5)
+        results = player_dao.natural_language_search(text, limit=limit)
 
         if not results:
             return {"results": [], "message": "Aucune carte trouvée."}

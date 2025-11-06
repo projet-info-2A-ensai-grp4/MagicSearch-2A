@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,6 +39,60 @@
                     <input type="text" placeholder="Search for a card...">
                     <button type="submit">Search</button>
                 </form>
+
+                <!-- Filter Section -->
+                <div class="filter-container">
+                    <button class="filter-toggle" id="filterToggle">
+                        <span>🔍 Advanced Filters</span>
+                        <span class="arrow">▼</span>
+                    </button>
+
+                    <div class="filter-panel" id="filterPanel">
+                        <!-- Color Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">Colors</label>
+                            <div class="color-buttons">
+                                <button type="button" class="color-btn" data-color="W" title="White">
+                                    <span class="mana-symbol white">W</span>
+                                </button>
+                                <button type="button" class="color-btn" data-color="U" title="Blue">
+                                    <span class="mana-symbol blue">U</span>
+                                </button>
+                                <button type="button" class="color-btn" data-color="B" title="Black">
+                                    <span class="mana-symbol black">B</span>
+                                </button>
+                                <button type="button" class="color-btn" data-color="R" title="Red">
+                                    <span class="mana-symbol red">R</span>
+                                </button>
+                                <button type="button" class="color-btn" data-color="G" title="Green">
+                                    <span class="mana-symbol green">G</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Mana Value Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">Mana Value</label>
+                            <div class="mana-inputs">
+                                <input type="number" id="manaMin" placeholder="Min" min="0" max="20">
+                                <span class="input-separator">—</span>
+                                <input type="number" id="manaMax" placeholder="Max" min="0" max="20">
+                            </div>
+                        </div>
+
+                        <!-- Limit -->
+                        <div class="filter-group">
+                            <label class="filter-label">Cards to Show</label>
+                            <input type="number" id="filterLimit" class="filter-input" value="8" min="1" max="50">
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="filter-actions">
+                            <button type="button" class="btn-filter-apply" id="applyFilter">Apply Filters</button>
+                            <button type="button" class="btn-filter-reset" id="resetFilter">Reset</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -46,50 +101,61 @@
         </section>
 
         <section class="tutorial">
-        <div class="container">
-            <h2>Tutorial: How to Use <strong>MAGICSEARCH</strong></h2>
-            <p class="intro">
-            Discover how to maximise the power of our semantic card-search engine for Magic: The Gathering. Whether you’re searching for a specific card, exploring deck ideas, or building your favourites library — follow the steps below to get started.
-            </p>
+            <div class="container">
+                <h2>Tutorial: How to Use <strong>MAGICSEARCH</strong></h2>
+                <p class="intro">
+                    Discover how to maximise the power of our semantic card-search engine for Magic: The Gathering.
+                    Whether you’re searching for a specific card, exploring deck ideas, or building your favourites
+                    library — follow the steps below to get started.
+                </p>
 
-            <div class="steps">
-            <div class="step">
-                <h3>1. Enter Your Query</h3>
-                <p>Type what you’re looking for in the search box. It could be a card name (“<em>Lightning Bolt</em>”), an effect (“deal 3 damage to any target”), a deck theme (“graveyard recursion”) or even a flavour word (“dragon tribal”).</p>
-            </div>
+                <div class="steps">
+                    <div class="step">
+                        <h3>1. Enter Your Query</h3>
+                        <p>Type what you’re looking for in the search box. It could be a card name (“<em>Lightning
+                                Bolt</em>”), an effect (“deal 3 damage to any target”), a deck theme (“graveyard
+                            recursion”) or even a flavour word (“dragon tribal”).</p>
+                    </div>
 
-            <div class="step">
-                <h3>2. Understand Semantic Search</h3>
-                <p>Our engine doesn’t just match keywords — it understands the **meaning** behind your words. So even if you don’t know the exact card name, you’ll find cards that fit your idea or effect.</p>
-            </div>
+                    <div class="step">
+                        <h3>2. Understand Semantic Search</h3>
+                        <p>Our engine doesn’t just match keywords — it understands the **meaning** behind your words. So
+                            even if you don’t know the exact card name, you’ll find cards that fit your idea or effect.
+                        </p>
+                    </div>
 
-            <div class="step">
-                <h3>3. Refine & Filter Results</h3>
-                <p>Once you get results, use filters like set, colour, format (Standard, Modern, Commander) to narrow down to exactly the cards you need.</p>
-            </div>
+                    <div class="step">
+                        <h3>3. Refine & Filter Results</h3>
+                        <p>Once you get results, use filters like set, colour, format (Standard, Modern, Commander) to
+                            narrow down to exactly the cards you need.</p>
+                    </div>
 
-            <div class="step">
-                <h3>4. Save & Favourite Cards</h3>
-                <p>Found a card you love? Mark it as favourite to revisit later, add to your pool, or build a deck around it.</p>
-            </div>
+                    <div class="step">
+                        <h3>4. Save & Favourite Cards</h3>
+                        <p>Found a card you love? Mark it as favourite to revisit later, add to your pool, or build a
+                            deck around it.</p>
+                    </div>
 
-            <div class="step">
-                <h3>5. Build Decks & Explore Synergies</h3>
-                <p>Use your saved cards and discovered results to build unique decks. Explore card synergies, new strategies and broaden your collection.</p>
-            </div>
-            </div>
+                    <div class="step">
+                        <h3>5. Build Decks & Explore Synergies</h3>
+                        <p>Use your saved cards and discovered results to build unique decks. Explore card synergies,
+                            new strategies and broaden your collection.</p>
+                    </div>
+                </div>
 
-            <p class="call-to-action">
-            Ready to begin? Try the search bar above now and let MAGICSEARCH take you into the multiverse of cards.
-            </p>
-        </div>
+                <p class="call-to-action">
+                    Ready to begin? Try the search bar above now and let MAGICSEARCH take you into the multiverse of
+                    cards.
+                </p>
+            </div>
         </section>
 
         <section class="mtg_game">
             <div class="container">
                 <h2>What is <span>Magic: The Gathering</span>?</h2>
                 <p class="intro">
-                    <strong>Magic: The Gathering (MTG)</strong> is a collectible card game where powerful wizards—called Planeswalkers—battle using decks filled with spells, creatures, and magical artifacts. 
+                    <strong>Magic: The Gathering (MTG)</strong> is a collectible card game where powerful wizards—called
+                    Planeswalkers—battle using decks filled with spells, creatures, and magical artifacts.
                     Each match combines strategy, creativity, and knowledge of thousands of unique cards.
                 </p>
 
@@ -97,7 +163,8 @@
                     <div class="mtg-card">
                         <img src="" alt="Land card" />
                         <h3>Goal of the Game</h3>
-                        <p>Reduce your opponent’s life total from 20 to 0 using creatures, spells, and abilities. Build decks around your favorite playstyles—aggro, control, combo, or midrange.</p>
+                        <p>Reduce your opponent’s life total from 20 to 0 using creatures, spells, and abilities. Build
+                            decks around your favorite playstyles—aggro, control, combo, or midrange.</p>
                     </div>
 
                     <div class="mtg-card">
@@ -115,17 +182,25 @@
                         <img src="" alt="Planeswalker card" />
                         <h3>Card Types</h3>
                         <p>Every card has a role: <br>
-                        <strong>Lands</strong> create mana, <strong>Creatures</strong> attack and defend, <strong>Instants</strong> and <strong>Sorceries</strong> cast spells, <strong>Enchantments</strong> and <strong>Artifacts</strong> give ongoing effects, and <strong>Planeswalkers</strong> represent allies with unique powers.</p>
+                            <strong>Lands</strong> create mana, <strong>Creatures</strong> attack and defend,
+                            <strong>Instants</strong> and <strong>Sorceries</strong> cast spells,
+                            <strong>Enchantments</strong> and <strong>Artifacts</strong> give ongoing effects, and
+                            <strong>Planeswalkers</strong> represent allies with unique powers.
+                        </p>
                     </div>
                 </div>
 
                 <div class="semantic-box">
                     <h3>Why Semantic Search for MTG?</h3>
-                    <p>With over 25,000 cards, finding the right one can be daunting. <strong>MAGICSEARCH</strong> understands your intent — not just keywords. Search “deal 3 damage to any target” and instantly find cards like <em>Lightning Bolt</em> or <em>Play with Fire</em> — even if you don’t remember their names!</p>
+                    <p>With over 25,000 cards, finding the right one can be daunting. <strong>MAGICSEARCH</strong>
+                        understands your intent — not just keywords. Search “deal 3 damage to any target” and instantly
+                        find cards like <em>Lightning Bolt</em> or <em>Play with Fire</em> — even if you don’t remember
+                        their names!</p>
                 </div>
 
                 <p class="learn-more">
-                    Want to learn the full rules? Visit <a href="https://magic.wizards.com/en/how-to-play" target="_blank">magic.wizards.com/how-to-play</a>
+                    Want to learn the full rules? Visit <a href="https://magic.wizards.com/en/how-to-play"
+                        target="_blank">magic.wizards.com/how-to-play</a>
                 </p>
             </div>
         </section>

@@ -160,7 +160,7 @@ class DeckDao(AbstractDao):
         except Exception as e:
             print(f"Error connecting to the database: {e}")
             exit()
-    
+
     def add_card_to_deck(self, deck_id: int, card_id: int):
         """
         """
@@ -185,7 +185,7 @@ class DeckDao(AbstractDao):
             print(f"Error connecting to the database: {e}")
             exit()
 
-    def remove_card_from_deck(self, deck_id: int, card_id: int):
+    def remove_card_from_deck(self, deck_id: int, card_id: int, all=False):
         """
         """
         card = CardDao()
@@ -195,24 +195,34 @@ class DeckDao(AbstractDao):
             raise ValueError(f"Deck {deck_id} does not exist.")
         try:
             with self:
-                sql_update = """
-                    UPDATE deck_cards
-                    SET quantity = quantity - 1
-                    WHERE deck_id = %s AND card_id = %s AND quantity > 1
-                    RETURNING quantity;
-                """
-                self.cursor.execute(sql_update, (deck_id, card_id))
-                row = self.cursor.fetchone()
-                if row is not None:
-                    return row[0]
-                sql_delete = """
-                    DELETE FROM deck_cards
-                    WHERE deck_id = %s AND card_id = %s
-                    RETURNING *;
-                """
-                self.cursor.execute(sql_delete, (deck_id, card_id))
-                deleted_row = self.cursor.fetchone()
-                return 0 if deleted_row else None
+                if all:
+                    sql_delete = """
+                        DELETE FROM deck_cards
+                        WHERE deck_id = %s AND card_id = %s
+                        RETURNING *;
+                    """
+                    self.cursor.execute(sql_delete, (deck_id, card_id))
+                    deleted_row = self.cursor.fetchone()
+                    return 0 if deleted_row else None
+                else:
+                    sql_update = """
+                        UPDATE deck_cards
+                        SET quantity = quantity - 1
+                        WHERE deck_id = %s AND card_id = %s AND quantity > 1
+                        RETURNING quantity;
+                    """
+                    self.cursor.execute(sql_update, (deck_id, card_id))
+                    row = self.cursor.fetchone()
+                    if row is not None:
+                        return row[0]
+                    sql_delete = """
+                        DELETE FROM deck_cards
+                        WHERE deck_id = %s AND card_id = %s
+                        RETURNING *;
+                    """
+                    self.cursor.execute(sql_delete, (deck_id, card_id))
+                    deleted_row = self.cursor.fetchone()
+                    return 0 if deleted_row else None
         except Exception as e:
             print(f"Error in remove_card_from_deck(): {e}")
             raise

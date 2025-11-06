@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Path
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
@@ -11,7 +11,33 @@ from dao.deckDao import DeckDao
 from utils.auth import create_access_token
 
 
-app = FastAPI()
+app = FastAPI(
+    title="Magic: The Gathering Card Search API",
+    description="""
+    A comprehensive API for searching, filtering, and managing Magic: The Gathering cards.
+    
+    ## Features
+    
+    * **Semantic Search**: Natural language search using vector embeddings
+    * **Advanced Filtering**: Filter cards by colors, mana value, type, etc.
+    * **Card Browsing**: Get random cards or search by name
+    * **User Management**: Registration, login, and authentication
+    * **Deck Management**: Create, update, and manage card decks
+    
+    ## Authentication
+    
+    Some endpoints require authentication using JWT tokens obtained from the `/login` endpoint.
+    """,
+    version="1.0.0",
+    contact={
+        "name": "Groupe 4 à l'ensai",
+        "email": "victor.jean@eleve.ensai.fr",
+    },
+    license_info={
+        "name": "MIT",
+    },
+)
+
 player_dao = PlayerDao()
 card_dao = CardDao()
 deck_dao = DeckDao()
@@ -27,62 +53,111 @@ app.add_middleware(
 
 
 class SearchQuery(BaseModel):
-    text: str
-    limit: Optional[int] = 10
-    filters: Optional[Dict] = None
+    text: str = Field(
+        ...,
+        description="Natural language search query",
+        example="blue control cards with flying",
+    )
+    limit: Optional[int] = Field(
+        10, ge=1, le=50, description="Maximum number of results"
+    )
+    filters: Optional[Dict] = Field(
+        None,
+        description="Additional filters (colors, mana_value, etc.)",
+        example={"colors": ["U"], "mana_value__lte": 3},
+    )
 
 
 class CardFilterQuery(BaseModel):
-    colors: Optional[List[str]] = None
-    mana_value: Optional[int] = None
-    mana_value__lte: Optional[int] = None
-    mana_value__gte: Optional[int] = None
-    order_by: Optional[str] = "id"
-    asc: Optional[bool] = True
-    limit: Optional[int] = 10
-    offset: Optional[int] = 0
+    colors: Optional[List[str]] = Field(
+        None, description="Color filter (W, U, B, R, G)", example=["U", "B"]
+    )
+    mana_value: Optional[int] = Field(None, ge=0, description="Exact mana value")
+    mana_value__lte: Optional[int] = Field(None, ge=0, description="Maximum mana value")
+    mana_value__gte: Optional[int] = Field(None, ge=0, description="Minimum mana value")
+    order_by: Optional[str] = Field("id", description="Column to sort by")
+    asc: Optional[bool] = Field(
+        True, description="Sort ascending (True) or descending (False)"
+    )
+    limit: Optional[int] = Field(
+        10, ge=1, le=100, description="Maximum number of results"
+    )
+    offset: Optional[int] = Field(0, ge=0, description="Pagination offset")
 
 
 class UserRegistration(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=50,
+        description="Unique username",
+        example="magic_player_123",
+    )
+    email: str = Field(
+        ..., description="Valid email address", example="player@example.com"
+    )
+    password: str = Field(
+        ...,
+        min_length=8,
+        description="Password (min 8 characters)",
+        example="SecurePass123!",
+    )
 
 
 class UserLogin(BaseModel):
-    username: str
-    password_hash: str
+    username: str = Field(..., description="Username", example="magic_player_123")
+    password_hash: str = Field(..., description="SHA-256 hashed password")
 
 
 class DeckcreateQuery(BaseModel):
-    deck_name: str
-    deck_type: Optional[str] = Field(None, alias="type")
+    deck_name: str = Field(
+        ..., description="Name of the deck", example="My Control Deck"
+    )
+    deck_type: Optional[str] = Field(
+        None,
+        alias="type",
+        description="Deck format (Standard, Modern, Commander, etc.)",
+        example="Commander",
+    )
 
 
 class DeckupdateQuery(BaseModel):
-    deck_id: int
-    deck_name: str
-    deck_type: Optional[str] = None
+    deck_id: int = Field(..., gt=0, description="ID of the deck to update")
+    deck_name: str = Field(..., description="New deck name")
+    deck_type: Optional[str] = Field(None, description="New deck type")
 
 
 class DeckdeleteQuery(BaseModel):
-    deck_id: int
+    deck_id: int = Field(..., gt=0, description="ID of the deck to delete")
 
 
 class DeckreadingQuery(BaseModel):
-    deck_id: int
+    deck_id: int = Field(..., gt=0, description="ID of the deck to retrieve")
 
 
 class DeckaddCardQuery(BaseModel):
-    deck_id: int
-    card_id: int
+    deck_id: int = Field(..., gt=0, description="Deck ID")
+    card_id: int = Field(..., gt=0, description="Card ID to add")
 
 
-@app.post("/search")
+@app.post(
+    "/search",
+    tags=["Search"],
+    summary="Semantic card search",
+    description="""
+    Perform a natural language search on Magic cards using vector embeddings.
+    
+    This endpoint converts your text query into a vector and finds the most similar cards
+    based on their semantic meaning, not just keyword matching.
+    
+    **Examples:**
+    - "powerful creatures with trample"
+    - "blue control spells that counter"
+    - "cheap removal for artifacts"
+    """,
+    response_description="List of cards matching the semantic search",
+)
 async def search(query: SearchQuery):
-    """
-    Endpoint pour effectuer une recherche sémantique sur les cartes Magic.
-    """
     text = query.text
     limit = min(query.limit, 50)
     filters = query.filters or {}
@@ -99,10 +174,26 @@ async def search(query: SearchQuery):
 
     except Exception as e:
         print(f"Erreur dans /search : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/filter")
+@app.post(
+    "/filter",
+    tags=["Search"],
+    summary="Filter cards by attributes",
+    description="""
+    Filter cards using structured attributes like colors, mana value, type, etc.
+    
+    **Supported Operators:**
+    - `mana_value`: Exact match
+    - `mana_value__lte`: Less than or equal
+    - `mana_value__gte`: Greater than or equal
+    - `colors`: Array overlap (card must have at least one matching color)
+    
+    **Example:** Get all blue cards with CMC ≤ 3, sorted by name
+    """,
+    response_description="Filtered list of cards",
+)
 async def filter(query: CardFilterQuery):
     try:
         filter_kwargs = {}
@@ -120,27 +211,36 @@ async def filter(query: CardFilterQuery):
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /filter : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# ============================================
-# BROWSING/EXPLORING ENDPOINTS
-# ============================================
-
-# IMPORTANT: Define /cards/random BEFORE /cards/{card_id}
-# to avoid the path parameter capturing "random" as an ID
-
-
-@app.get("/cards/random")
+@app.get(
+    "/cards/random",
+    tags=["Browse"],
+    summary="Get a random card",
+    description="Retrieve a randomly selected card from the database. Perfect for discovery and inspiration!",
+    response_description="A randomly selected Magic card",
+    responses={
+        200: {
+            "description": "Successful response",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "card": {
+                            "id": 12345,
+                            "name": "Lightning Bolt",
+                            "mana_cost": "{R}",
+                            "type": "Instant",
+                            "text": "Lightning Bolt deals 3 damage to any target.",
+                        }
+                    }
+                }
+            },
+        },
+        404: {"description": "No cards found in database"},
+    },
+)
 async def get_random_card():
-    """
-    Get a random card from the database.
-
-    Returns
-    -------
-    dict
-        A randomly selected card.
-    """
     try:
         card = card_dao.get_random_card()
 
@@ -156,26 +256,21 @@ async def get_random_card():
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.get("/cards/{card_id}")
-async def get_card_by_id(card_id: int):
-    """
-    Retrieve a card by its unique ID.
-
-    Parameters
-    ----------
-    card_id : int
-        The unique identifier of the card.
-
-    Returns
-    -------
-    dict
-        Card information if found.
-
-    Raises
-    ------
-    HTTPException
-        404 if card not found, 400 if invalid ID.
-    """
+@app.get(
+    "/cards/{card_id}",
+    tags=["Browse"],
+    summary="Get card by ID",
+    description="Retrieve detailed information about a specific card using its unique ID.",
+    response_description="Card details",
+    responses={
+        200: {"description": "Card found"},
+        400: {"description": "Invalid card ID"},
+        404: {"description": "Card not found"},
+    },
+)
+async def get_card_by_id(
+    card_id: int = Path(..., gt=0, description="Unique card identifier"),
+):
     if card_id <= 0:
         raise HTTPException(
             status_code=400, detail="Card ID must be a positive integer"
@@ -198,33 +293,32 @@ async def get_card_by_id(card_id: int):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.get("/cards")
+@app.get(
+    "/cards",
+    tags=["Browse"],
+    summary="Search cards by name",
+    description="""
+    Search for cards using partial or exact name matching (case-insensitive).
+    
+    **Examples:**
+    - `name=bolt` → finds "Lightning Bolt", "Bolt Bend", etc.
+    - `name=Jace` → finds all cards with "Jace" in the name
+    """,
+    response_description="List of matching cards with pagination info",
+)
 async def search_cards_by_name(
-    name: Optional[str] = None, limit: int = 20, offset: int = 0
+    name: Optional[str] = Query(
+        None, min_length=1, description="Full or partial card name"
+    ),
+    limit: int = Query(20, ge=1, le=100, description="Maximum results"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
 ):
-    """
-    Search cards by exact or partial name match.
-
-    Parameters
-    ----------
-    name : str, optional
-        Full or partial card name to search for (case-insensitive).
-    limit : int, optional
-        Maximum number of results (default: 20, max: 100).
-    offset : int, optional
-        Pagination offset (default: 0).
-
-    Returns
-    -------
-    dict
-        List of matching cards with pagination info.
-    """
     if not name:
         raise HTTPException(
             status_code=400, detail="Query parameter 'name' is required"
         )
 
-    limit = min(limit, 100)  # Cap at 100 results
+    limit = min(limit, 100)
 
     try:
         cards = card_dao.search_by_name(name, limit=limit, offset=offset)
@@ -236,11 +330,18 @@ async def search_cards_by_name(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.post("/register")
+@app.post(
+    "/register",
+    tags=["Authentication"],
+    summary="Register new user",
+    description="Create a new user account with username, email, and password.",
+    response_description="Registration confirmation with user details",
+    responses={
+        200: {"description": "User registered successfully"},
+        400: {"description": "Invalid input or user already exists"},
+    },
+)
 async def register(user_data: UserRegistration):
-    """
-    Endpoint pour l'inscription d'un nouvel utilisateur.
-    """
     try:
         password_hash = hashlib.sha256(user_data.password.encode()).hexdigest()
 
@@ -261,18 +362,33 @@ async def register(user_data: UserRegistration):
     except ValueError as e:
         error_message = str(e)
         if "username" in error_message.lower():
-            return {"error": "USERNAME ISSUE", "message": error_message}
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "USERNAME_ISSUE", "message": error_message},
+            )
         elif "email" in error_message.lower():
-            return {"error": "EMAIL ISSUE", "message": error_message}
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "EMAIL_ISSUE", "message": error_message},
+            )
         else:
-            return {"error": "INVALID_INPUT", "message": error_message}
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "INVALID_INPUT", "message": error_message},
+            )
 
     except Exception as e:
         print(f"Erreur dans /register : {e}")
-        return {"error": "SERVER_ERROR", "message": "Une erreur serveur est survenue"}
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.post("/login")
+@app.post(
+    "/login",
+    tags=["Authentication"],
+    summary="User login",
+    description="Authenticate a user and receive a JWT access token for protected endpoints.",
+    response_description="Login confirmation with JWT token",
+)
 async def login(user_data: UserLogin):
     try:
         user_service = UserService(
@@ -303,57 +419,88 @@ async def login(user_data: UserLogin):
         }
 
     except ValueError as e:
-        return {"error": "INVALID_CREDENTIALS", "message": str(e)}
+        raise HTTPException(
+            status_code=401, detail={"error": "INVALID_CREDENTIALS", "message": str(e)}
+        )
 
     except Exception as e:
         print(f"Erreur dans /login : {e}")
-        return {"error": "SERVER_ERROR", "message": "Une erreur serveur est survenue"}
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@app.post("/deck/read")
+@app.post(
+    "/deck/read",
+    tags=["Deck Management"],
+    summary="Get deck by ID",
+    description="Retrieve all cards in a specific deck.",
+)
 async def reading_deck(query: DeckreadingQuery):
     try:
         results = deck_dao.get_by_id(query.deck_id)
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/read : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/deck/create")
+@app.post(
+    "/deck/create",
+    tags=["Deck Management"],
+    summary="Create new deck",
+    description="Create a new empty deck with a name and optional format type.",
+)
 async def create_deck(query: DeckcreateQuery):
     try:
         results = deck_dao.create(name=query.deck_name, type=query.deck_type)
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/create : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put("/deck/update")
+@app.put(
+    "/deck/update",
+    tags=["Deck Management"],
+    summary="Update deck",
+    description="Update deck name and/or type.",
+)
 async def update_deck(query: DeckupdateQuery):
     try:
-        results = deck_dao.update(query.deck_id, name=query.deck_name, type=query.deck_type)
+        results = deck_dao.update(
+            query.deck_id, name=query.deck_name, type=query.deck_type
+        )
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/update : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/deck/delete")
+@app.delete(
+    "/deck/delete",
+    tags=["Deck Management"],
+    summary="Delete deck",
+    description="Permanently delete a deck and all its card associations.",
+)
 async def delete_deck(query: DeckdeleteQuery):
     try:
         results = deck_dao.delete(query.deck_id)
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/delete : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/deck/user/read")
+@app.get(
+    "/deck/user/read",
+    tags=["Deck Management"],
+    summary="Get user's decks",
+    description="Retrieve all decks belonging to a user, or a specific deck if deck_id is provided.",
+)
 async def read_user_deck(
-    user_id: int = Query(..., description="ID de l'utilisateur"),
-    deck_id: Optional[int] = Query(None, description="ID du deck (facultatif)"),
+    user_id: int = Query(..., gt=0, description="User ID"),
+    deck_id: Optional[int] = Query(
+        None, gt=0, description="Specific deck ID (optional)"
+    ),
 ):
     try:
         if deck_id:
@@ -363,27 +510,37 @@ async def read_user_deck(
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/user/read : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/deck/card/add")
+@app.post(
+    "/deck/card/add",
+    tags=["Deck Management"],
+    summary="Add card to deck",
+    description="Add a card to a deck. If the card already exists, increments quantity.",
+)
 async def add_card_deck(query: DeckaddCardQuery):
     try:
         results = deck_dao.add_card_to_deck(query.deck_id, query.card_id)
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/card/add : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete("/deck/card/remove")
+@app.delete(
+    "/deck/card/remove",
+    tags=["Deck Management"],
+    summary="Remove card from deck",
+    description="Remove one copy of a card from a deck. If quantity reaches 0, removes the card entirely.",
+)
 async def remove_card_deck(
-    deck_id: int = Query(..., description="ID du deck"),
-    card_id: int = Query(..., description="ID de la carte à retirer"),
+    deck_id: int = Query(..., gt=0, description="Deck ID"),
+    card_id: int = Query(..., gt=0, description="Card ID to remove"),
 ):
     try:
         results = deck_dao.remove_card_from_deck(deck_id, card_id)
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/card/remove : {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))

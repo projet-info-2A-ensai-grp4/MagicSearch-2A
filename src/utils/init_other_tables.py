@@ -19,10 +19,8 @@ with dbConnection() as conn:
 
         CREATE TABLE IF NOT EXISTS decks (
             deck_id SERIAL PRIMARY KEY,
-            user_id INT NOT NULL,
             name VARCHAR(100) NOT NULL,
             type VARCHAR(100),
-            FOREIGN KEY (user_id) REFERENCES users(user_id)
         );
 
         CREATE TABLE IF NOT EXISTS deck_cards (

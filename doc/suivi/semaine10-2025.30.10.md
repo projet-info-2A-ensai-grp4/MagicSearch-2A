@@ -13,7 +13,10 @@ Tanguy Ajas
 
 ### Nom Prénom élève 2
 Alexandre Gasowski
-- ras
+- [x] travail sur le diagramme de classe
+- [x] userService : possibilité de créer un compte et se connecter
+- [x] tester une majorité de méthodes
+- [x] favoritesDao : création des cartes favorites, y ajouter et retirer des cartes
 
 ### Nom Prénom élève 3
 Victor Jean

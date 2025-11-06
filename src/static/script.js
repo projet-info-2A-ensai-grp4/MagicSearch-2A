@@ -13,7 +13,7 @@ document.querySelector(".search-bar").addEventListener("submit", async (e) => {
   // Store the query before clearing
   lastSearchQuery = input.value;
 
-  const res = await fetch("http://localhost:8000/search", {
+  const res = await fetch("https://user-tajas-551109-user-8000.user.lab.sspcloud.fr/search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: lastSearchQuery, limit: limit }),

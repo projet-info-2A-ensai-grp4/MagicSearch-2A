@@ -43,6 +43,11 @@ class UserRegistration(BaseModel):
     password: str
 
 
+class UserLogin(BaseModel):
+    username: str
+    password_hash: str
+
+
 @app.post("/search")
 async def search(query: Query):
     """
@@ -118,4 +123,32 @@ async def register(user_data: UserRegistration):
 
     except Exception as e:
         print(f"Erreur dans /register : {e}")
+        return {"error": "SERVER_ERROR", "message": "Une erreur serveur est survenue"}
+
+
+@app.post("/login")
+async def login(user_data: UserLogin):
+    try:
+        user_service = UserService(
+            username=user_data.username,
+            email=None,
+            password_hash=user_data.password_hash
+        )
+
+        user = user_service.signIn()
+
+        return {
+            "message": "Login successful",
+            "user": {
+                "id": user["user_id"], 
+                "username": user["username"],
+                "email": user["email"]
+            }
+        }
+
+    except ValueError as e:
+        return {"error": "INVALID_CREDENTIALS", "message": str(e)}
+
+    except Exception as e:
+        print(f"Erreur dans /login : {e}")
         return {"error": "SERVER_ERROR", "message": "Une erreur serveur est survenue"}

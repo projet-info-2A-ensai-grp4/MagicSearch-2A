@@ -1,11 +1,11 @@
-from dao.favoritesDao import FavoritesDao
+from dao.favoriteDao import FavoriteDao
 from dao.userDao import UserDao
 from dao.cardDao import CardDao
 
 
 class FavoriteBusiness:
-    def __init__(self, favorites_dao, user_dao, card_dao):
-        self.favorites = favorites_dao
+    def __init__(self, favorite_dao: FavoriteDao, user_dao: UserDao, card_dao: CardDao):
+        self.favorite = favorite_dao
         self.user = user_dao
         self.card = card_dao
     
@@ -30,9 +30,9 @@ class FavoriteBusiness:
             raise ValueError("This user_id does not exist")
         if not self.card.exist(card_id):
             raise ValueError("This card_id does not exist")
-        if self.favorites.exist([user_id, card_id]):
+        if self.favorite.exist([user_id, card_id]):
             return {"user_id": user_id, "card_id": card_id}
-        row = self.favorites.create(user_id, card_id)
+        row = self.favorite.create(user_id, card_id)
         return row
     
     def remove_favorite(self, user_id, card_id):
@@ -56,7 +56,7 @@ class FavoriteBusiness:
             raise ValueError("This user_id does not exist")
         if not self.card.exist(card_id):
             raise ValueError("This card_id does not exist")
-        if not self.favorites.exist([user_id, card_id]):
+        if not self.favorite.exist([user_id, card_id]):
             raise ValueError("This favorite_id does not exist")
-        row = self.favorites.delete([user_id, card_id])
+        row = self.favorite.delete([user_id, card_id])
         return row

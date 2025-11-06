@@ -2,7 +2,7 @@ import psycopg2
 from .abstractDao import AbstractDao
 
 
-class FavoritesDao(AbstractDao):
+class FavoriteDao(AbstractDao):
     # CREATE
     def create(self, user_id, card_id):
         """

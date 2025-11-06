@@ -1,7 +1,8 @@
 import psycopg2
 from .abstractDao import AbstractDao
 
-class HistoriesDao(AbstractDao):
+
+class HistoryDao(AbstractDao):
     # CREATE
     def create(self, user_id, prompt):
         """
@@ -58,9 +59,30 @@ class HistoriesDao(AbstractDao):
         Parameters
         ----------
         id : int
-            
+            The user_id.
+        
+        Returns
+        -------
+        hist : dict
+            Dictionary containing the user's history:
+            {'history_id': int, 'user_id': int, 'prompt': str}.
         """
-        pass
+        try:
+            with self:
+                self.cursor.execute(
+                    "SELECT history_id,       "
+                    "       user_id,          "
+                    "       prompt            "
+                    "FROM histories           "
+                    "WHERE user_id = %s       ",
+                    (id,),
+                )
+                hist = self.cursor.fetchall()
+                return hist
+        except psycopg2.OperationalError as e:
+            raise ConnectionError(f"Database connection failed: {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"Unexpected database error: {e}") from e
 
     # UPDATE
     def update(self, id):

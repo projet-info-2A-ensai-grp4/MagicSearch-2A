@@ -48,18 +48,23 @@ def mock_get(url):
     mock_resp = MagicMock()
     if "valid-id" in url:
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {"data": [{"image_uris": {"normal": "https://fakeurl.com/card.jpg"}}]}
+        mock_resp.json.return_value = {
+            "data": [{"image_uris": {"normal": "https://fakeurl.com/card.jpg"}}]
+        }
     else:
         mock_resp.status_code = 200
         mock_resp.json.return_value = {"data": []}
     return mock_resp
 
-    with patch("psycopg2.connect", return_value=mock_conn), patch("requests.get", side_effect=mock_get):
+    with (
+        patch("psycopg2.connect", return_value=mock_conn),
+        patch("requests.get", side_effect=mock_get),
+    ):
         fetch_and_update_images()
         # Vérifie que UPDATE a été appelé pour la première carte
         mock_cursor.execute.assert_any_call(
             "UPDATE cards\n                        SET image_url = %s\n                        WHERE id = %s;",
-            ("https://fakeurl.com/card.jpg", 1)
+            ("https://fakeurl.com/card.jpg", 1),
         )
 
 

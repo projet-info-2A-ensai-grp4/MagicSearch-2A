@@ -6,9 +6,10 @@ from dao.playerDao import PlayerDao
 
 @pytest.fixture
 def mock_player_db():
-    with patch("dao.playerDao.dbConnection") as mock_db_conn, patch(
-        "dao.playerDao.register_vector"
-    ) as mock_register_vector:
+    with (
+        patch("dao.playerDao.dbConnection") as mock_db_conn,
+        patch("dao.playerDao.register_vector") as mock_register_vector,
+    ):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
 
@@ -114,8 +115,9 @@ def test_get_card_embedding_returns_vector(mock_player_db):
 
 
 def test_get_card_embedding_none_returns_none():
-    with patch("dao.playerDao.dbConnection") as mock_db_conn, patch(
-        "dao.playerDao.register_vector"
+    with (
+        patch("dao.playerDao.dbConnection") as mock_db_conn,
+        patch("dao.playerDao.register_vector"),
     ):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -128,13 +130,17 @@ def test_get_card_embedding_none_returns_none():
 
 
 def test_natural_language_search_raises_connection_error_on_db_failure():
-    with patch("dao.playerDao.dbConnection", side_effect=psycopg2.OperationalError("conn fail")):
+    with patch(
+        "dao.playerDao.dbConnection", side_effect=psycopg2.OperationalError("conn fail")
+    ):
         dao = PlayerDao(embedding_service=MagicMock())
         with pytest.raises(ConnectionError):
             dao.natural_language_search("x", limit=1)
 
 
-def test_natural_language_search_raises_runtime_error_on_unexpected_db_error(mock_player_db):
+def test_natural_language_search_raises_runtime_error_on_unexpected_db_error(
+    mock_player_db,
+):
     mock_conn, mock_cursor = mock_player_db
     mock_cursor.execute.side_effect = Exception("boom")
     dao = PlayerDao(embedding_service=MagicMock())

@@ -36,9 +36,7 @@ class UserService:
             raise ValueError("The username cannot be empty")
         username = self.username.strip()
         if not (3 <= len(username) <= 20):
-            raise ValueError(
-                "The username must have between 3 and 20 characters"
-            )
+            raise ValueError("The username must have between 3 and 20 characters")
         allowed_symbols = {"-", "_", "."}
         for char in username:
             if not (char.isalnum() or char in allowed_symbols):

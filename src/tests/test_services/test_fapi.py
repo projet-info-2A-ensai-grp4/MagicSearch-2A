@@ -14,7 +14,7 @@ def test_filter_endpoint_calls_dao(monkeypatch):
             "mana_value": "2",
             "type": "Instant",
             "text": "Counter target red spell.",
-            "image_url": "https://example.com/blue.jpg"
+            "image_url": "https://example.com/blue.jpg",
         },
         {
             "id": 2,
@@ -23,8 +23,8 @@ def test_filter_endpoint_calls_dao(monkeypatch):
             "mana_value": "5",
             "type": "Instant",
             "text": "Destroy target blue permanent.",
-            "image_url": "https://example.com/red.jpg"
-        }
+            "image_url": "https://example.com/red.jpg",
+        },
     ]
 
     def mock_filter(self, order_by, asc, limit, offset, **kwargs):
@@ -37,6 +37,7 @@ def test_filter_endpoint_calls_dao(monkeypatch):
         return mock_results
 
     from dao.cardDao import CardDao
+
     monkeypatch.setattr(CardDao, "filter", mock_filter)
 
     response = client.post(
@@ -47,7 +48,7 @@ def test_filter_endpoint_calls_dao(monkeypatch):
             "order_by": "id",
             "asc": True,
             "limit": 10,
-            "offset": 0
+            "offset": 0,
         },
     )
 
@@ -56,7 +57,7 @@ def test_filter_endpoint_calls_dao(monkeypatch):
     assert "results" in data
     assert len(data["results"]) == 2
     assert data["results"][0]["name"] == "Blue Elemental Blast"
-    assert data["results"][1]["mana_value"] == '5'
+    assert data["results"][1]["mana_value"] == "5"
 
 
 def test_filter_endpoint_integration_real():
@@ -73,7 +74,7 @@ def test_filter_endpoint_integration_real():
         "order_by": "id",
         "asc": True,
         "limit": 1,
-        "offset": 0
+        "offset": 0,
     }
     response = client.post("/filter", json=request_payload)
     assert response.status_code == 200

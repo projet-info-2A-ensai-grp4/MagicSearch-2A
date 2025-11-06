@@ -12,7 +12,7 @@ def mock_user_dao():
             "username": "harry",
             "email": "harry@hogwarts.com",
             "password_hash": "hash1",
-            "role_id": 0
+            "role_id": 0,
         }
     }
     next_id = [2]
@@ -135,6 +135,7 @@ def mock_user_dao():
 
 
 # ---------- TESTS ----------
+
 
 # exist()
 def test_exist_true(mock_user_dao):

@@ -3,7 +3,6 @@ from .userDao import UserDao
 
 
 class AdminDao(UserDao):
-
     def get_all(self):
         """
         Get every users in the database.

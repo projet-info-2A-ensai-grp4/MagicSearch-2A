@@ -80,12 +80,13 @@ async function checkAuthStatus() {
 
 function showAuthRequired() {
     document.getElementById('authRequired').style.display = 'flex';
-    document.getElementById('favoritesContent').style.display = 'none';
+    document.getElementById('loadingSpinner').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('favoritesList').innerHTML = '';
 }
 
 async function loadFavorites(token) {
     document.getElementById('authRequired').style.display = 'none';
-    document.getElementById('favoritesContent').style.display = 'block';
     document.getElementById('loadingSpinner').style.display = 'flex';
     document.getElementById('emptyState').style.display = 'none';
     document.getElementById('favoritesList').innerHTML = '';
@@ -110,12 +111,13 @@ async function loadFavorites(token) {
 
         document.getElementById('loadingSpinner').style.display = 'none';
 
+        // Update the counter in the hero section
+        document.getElementById('favoritesCount').textContent = favorites.length;
+
         if (favorites.length === 0) {
             document.getElementById('emptyState').style.display = 'flex';
-            document.getElementById('favoritesCount').textContent = 'You have no favorites yet';
         } else {
             displayFavorites(favorites);
-            document.getElementById('favoritesCount').textContent = `You have ${favorites.length} favorite card${favorites.length > 1 ? 's' : ''}`;
         }
 
     } catch (error) {

@@ -3,16 +3,17 @@
 **Semaine n° 11**
 
 > *Vous indiquerez également le temps estimé à travailler sur le projet du vendredi 0h au jeudi 23h59.*
-temps de travail estimé : 20h
+temps de travail estimé : 30h
 
 ## Tâches réalisées cette semaine
 **This week, the all group worked on the report, because it is very important!**
 ### Nom Prénom élève 1
 Tanguy Ajas
-- [x] implementation of fastapi 
-- [x] search endpoint
+- [x] implementation of fastapi and communication between the frontend and the backend when needed : 
+- [x] search endpoint and displaying the images of the cards on the frontend (script.js, fapi.py)
 - [x] register system (register.js, fapi.py)
 - [x] login and JWT (login.js, fapi.py, auth.py)
+- [x] endpoints histories and favorites (protected routes (BEARER..)) (fapi.py, auth.py)
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

@@ -5,7 +5,6 @@ from dao.userDao import UserDao
 from utils.dbConnection import dbConnection
 from services.embeddingService import EmbeddingService
 import numpy
-from dao.deckDao import DeckDao
 
 
 class PlayerDao(UserDao):
@@ -151,8 +150,9 @@ class PlayerDao(UserDao):
 
 
 def player_get_deck(self, deck_id, user_id):
-    """
-    """
+    """ """
+    from deckDao import DeckDao
+
     if DeckDao.exist(deck_id):
         if self.exist(user_id):
             try:
@@ -161,14 +161,17 @@ def player_get_deck(self, deck_id, user_id):
                     WHERE udl.user_id = %s
                     AND udl.deck_id = %s;
                     """
-                params = (user_id, deck_id,)
+                params = (
+                    user_id,
+                    deck_id,
+                )
                 rows = self.cursor.execute(sql_query, params)
                 if rows is None:
                     return False
                 else:
                     return True
             except Exception as e:
-                print(f'Error in PlayerDao.player_get_deck: {e}')
+                print(f"Error in PlayerDao.player_get_deck: {e}")
                 raise
     else:
         return None

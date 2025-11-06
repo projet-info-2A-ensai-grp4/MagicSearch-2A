@@ -26,7 +26,8 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     const result = await response.json();
     console.log(result);
 
-    if (response.ok) {
+    // Vérification que l'utilisateur existe avant d'accéder à .username
+    if (result.user) {
         alert("Login successful! Welcome " + result.user.username);
         window.location.href = "../pages/index.html";
     } else {

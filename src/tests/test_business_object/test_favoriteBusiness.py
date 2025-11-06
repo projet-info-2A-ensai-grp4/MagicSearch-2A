@@ -7,24 +7,24 @@ from business_object.favoriteBusiness import FavoriteBusiness
 def mock_favorite_business():
     mock_user_dao = MagicMock()
     mock_card_dao = MagicMock()
-    mock_favorites_dao = MagicMock()
+    mock_favorite_dao = MagicMock()
 
     mock_user_dao.exist.return_value = True
     mock_card_dao.exist.return_value = True
-    mock_favorites_dao.exist.return_value = False
+    mock_favorite_dao.exist.return_value = False
 
-    mock_favorites_dao.create.return_value = {
+    mock_favorite_dao.create.return_value = {
         "user_id": 1,
         "card_id": 42,
         "added_at": "2025-11-03 12:00:00",
     }
-    mock_favorites_dao.delete.return_value = {
+    mock_favorite_dao.delete.return_value = {
         "user_id": 1,
         "card_id": 42,
     }
 
-    fav_business = FavoriteBusiness(mock_favorites_dao, mock_user_dao, mock_card_dao)
-    return fav_business, mock_user_dao, mock_card_dao, mock_favorites_dao
+    fav_business = FavoriteBusiness(mock_favorite_dao, mock_user_dao, mock_card_dao)
+    return fav_business, mock_user_dao, mock_card_dao, mock_favorite_dao
 
 
 def test_ass_favorite_success(mock_favorite_business):

@@ -59,15 +59,140 @@ function updateHeaderAuth() {
 // Initialize auth state on page load
 document.addEventListener('DOMContentLoaded', () => {
   updateHeaderAuth();
+  setupHistoryFeature();
 });
+
+// History feature setup
+function setupHistoryFeature() {
+  const searchInput = document.getElementById('searchInput');
+  const historyContainer = document.getElementById('historyContainer');
+  const historyClose = document.getElementById('historyClose');
+
+  if (!searchInput || !historyContainer) return;
+
+  // Show history when user focuses on search input
+  searchInput.addEventListener('focus', async () => {
+    const user = getUserSession();
+    if (user) {
+      await loadAndDisplayHistory();
+    }
+  });
+
+  // Close history when clicking the close button
+  if (historyClose) {
+    historyClose.addEventListener('click', () => {
+      historyContainer.style.display = 'none';
+    });
+  }
+
+  // Close history when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!historyContainer.contains(e.target) && !searchInput.contains(e.target)) {
+      historyContainer.style.display = 'none';
+    }
+  });
+}
+
+// Load and display user history
+async function loadAndDisplayHistory() {
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API_CONFIG.BASE_URL}/history`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      console.error('Failed to load history');
+      return;
+    }
+
+    const data = await res.json();
+    displayHistory(data.history);
+  } catch (error) {
+    console.error('Error loading history:', error);
+  }
+}
+
+// Display history in the UI
+function displayHistory(historyItems) {
+  const historyContainer = document.getElementById('historyContainer');
+  const historyList = document.getElementById('historyList');
+
+  if (!historyList) return;
+
+  historyList.innerHTML = '';
+
+  if (!historyItems || historyItems.length === 0) {
+    historyList.innerHTML = '<div class="history-empty">No search history yet</div>';
+  } else {
+    // Sort by date (most recent first) and display
+    historyItems.reverse().forEach(item => {
+      const historyItem = document.createElement('div');
+      historyItem.className = 'history-item';
+
+      const itemText = document.createElement('span');
+      itemText.className = 'history-item-text';
+      itemText.textContent = item.prompt || item;
+
+      const itemDate = document.createElement('span');
+      itemDate.className = 'history-item-date';
+      if (item.date) {
+        const date = new Date(item.date);
+        itemDate.textContent = date.toLocaleDateString();
+      }
+
+      historyItem.appendChild(itemText);
+      if (item.date) {
+        historyItem.appendChild(itemDate);
+      }
+
+      // Click to use this search query
+      historyItem.addEventListener('click', () => {
+        const searchInput = document.getElementById('searchInput');
+        searchInput.value = item.prompt || item;
+        historyContainer.style.display = 'none';
+        // Optionally trigger search automatically
+        // searchInput.closest('form').dispatchEvent(new Event('submit'));
+      });
+
+      historyList.appendChild(historyItem);
+    });
+  }
+
+  historyContainer.style.display = 'block';
+}
 
 // Search functionality
 document.querySelector(".search-bar").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const input = e.target.querySelector("input");
+  const input = document.getElementById('searchInput');
   const limit = parseInt(document.getElementById('filterLimit').value) || 8;
 
   lastSearchQuery = input.value;
+
+  // Add to history if user is logged in
+  const user = getUserSession();
+  if (user) {
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    try {
+      await fetch(`${API_CONFIG.BASE_URL}/history/add`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: lastSearchQuery })
+      });
+    } catch (error) {
+      console.error('Failed to add to history:', error);
+    }
+  }
 
   const res = await fetch(`${API_CONFIG.BASE_URL}/search`, {
     method: "POST",
@@ -77,6 +202,12 @@ document.querySelector(".search-bar").addEventListener("submit", async (e) => {
 
   const data = await res.json();
   displayResults(data);
+
+  // Hide history after search
+  const historyContainer = document.getElementById('historyContainer');
+  if (historyContainer) {
+    historyContainer.style.display = 'none';
+  }
 });
 
 // Filter toggle
@@ -310,7 +441,7 @@ async function addToFavorites(cardId, button) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Server error response:', errorData);
-      
+
       // Handle specific error cases
       if (errorData.detail && errorData.detail.includes('already in favorites')) {
         alert('This card is already in your favorites!');
@@ -324,10 +455,10 @@ async function addToFavorites(cardId, button) {
     button.classList.add('added');
     button.innerHTML = '✓';
     button.title = 'Added to favorites';
-    
+
     // Disable button to prevent duplicate adds
     button.disabled = true;
-    
+
     setTimeout(() => {
       button.innerHTML = '♥';
     }, 2000);

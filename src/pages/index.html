@@ -35,10 +35,23 @@
             <div class="hero-content">
                 <h2>MAGICSEARCH</h2>
                 <p>Semantic search for Magic The Gathering Cards</p>
-                <form class="search-bar">
-                    <input type="text" placeholder="Search for a card...">
-                    <button type="submit">Search</button>
-                </form>
+                <div class="search-container">
+                    <form class="search-bar">
+                        <input type="text" placeholder="Search for a card..." id="searchInput">
+                        <button type="submit">Search</button>
+                    </form>
+
+                    <!-- History Section -->
+                    <div class="history-container" id="historyContainer" style="display: none;">
+                        <div class="history-header">
+                            <span>Recent Searches</span>
+                            <button class="history-close" id="historyClose">✕</button>
+                        </div>
+                        <div class="history-list" id="historyList">
+                            <!-- History items will be inserted here -->
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Filter Section -->
                 <div class="filter-container">

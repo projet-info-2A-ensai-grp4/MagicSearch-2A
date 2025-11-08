@@ -20,17 +20,17 @@ app = FastAPI(
     title="Magic: The Gathering Card Search API",
     description="""
     A comprehensive API for searching, filtering, and managing Magic: The Gathering cards.
-    
+
     ## Features
-    
+
     * **Semantic Search**: Natural language search using vector embeddings
     * **Advanced Filtering**: Filter cards by colors, mana value, type, etc.
     * **Card Browsing**: Get random cards or search by name
     * **User Management**: Registration, login, and authentication
     * **Deck Management**: Create, update, and manage card decks
-    
+
     ## Authentication
-    
+
     Protected endpoints require authentication using JWT tokens obtained from the `/login` endpoint.
     """,
     version="1.0.0",
@@ -177,7 +177,7 @@ class HistoryAction(BaseModel):
 )
 async def search(query: SearchQuery):
     text = query.text
-    limit = min(query.limit, 50)
+    limit = min(query.limit, 300)
     filters = query.filters or {}
 
     print(f"Requête reçue : {text}, limit: {limit}, filters: {filters}")
@@ -201,13 +201,13 @@ async def search(query: SearchQuery):
     summary="Filter cards by attributes",
     description="""
     Filter cards using structured attributes like colors, mana value, type, etc.
-    
+
     **Supported Operators:**
     - `mana_value`: Exact match
     - `mana_value__lte`: Less than or equal
     - `mana_value__gte`: Greater than or equal
     - `colors`: Array overlap (card must have at least one matching color)
-    
+
     **Example:** Get all blue cards with CMC ≤ 3, sorted by name
     """,
     response_description="Filtered list of cards",
@@ -317,7 +317,7 @@ async def get_card_by_id(
     summary="Search cards by name",
     description="""
     Search for cards using partial or exact name matching (case-insensitive).
-    
+
     **Examples:**
     - `name=bolt` → finds "Lightning Bolt", "Bolt Bend", etc.
     - `name=Jace` → finds all cards with "Jace" in the name
@@ -569,7 +569,7 @@ async def add_to_favorites(fav: FavoriteAction, current_user: dict = Depends(get
     try:
         result = favorite_business.add_favorite(current_user["user_id"], fav.card_id)
         return {"message": "Added to favorites", "favorite": result}
-    
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -584,7 +584,7 @@ async def remove_from_favorites(fav: FavoriteAction, current_user: dict = Depend
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -605,7 +605,7 @@ async def add_history(entry: HistoryAction, current_user: dict = Depends(get_cur
     try:
         result = history_business.add(current_user["user_id"], entry.prompt)
         return {"message": "Added to history", "history": result}
-    
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

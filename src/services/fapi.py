@@ -69,7 +69,7 @@ class SearchQuery(BaseModel):
         example="blue control cards with flying",
     )
     limit: Optional[int] = Field(
-        10, ge=1, le=50, description="Maximum number of results"
+        10, ge=1, le=150, description="Maximum number of results"
     )
     filters: Optional[Dict] = Field(
         None,

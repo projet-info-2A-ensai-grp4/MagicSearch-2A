@@ -30,8 +30,8 @@ Victor Jean
 - [x] automatic deployment of the project
 - [x] natural language search improvement
 - [x] Filtering function
-- [ ] update README.md préciser requirements à installer (la liste), write something about sspcloud (credentials needed for api and postgres database)
-
+- [x] updated README.md with install guidance
+- [x] FastAPI refactoring to be clearer 
 
 ### Nom Prénom élève 4
 Lina Louati
@@ -52,12 +52,11 @@ Charles Ozeel
 > Liste des tâches en attente de prise en charge.
 ### Prioritaires
 *Toujours penser à faire des units tests !!*
-- [ ] Class à implémenter (voir le kanban du projet)
-- [x] FastAPI endpoints
+- [ ] README.md qui donne le lien vers une instance public
 
 ### Secondaires
 - [x] Récupérer les images des cartes (API Scryfall)
-- [ ] Moteur de recherche qui différencie logique (coût d'une carte) et semantic search
+- [x] Moteur de recherche qui différencie logique (coût d'une carte) et semantic search
 - [x] Interface graphique (à voir ce que l'on fait)
 
 ## Notes de fonctionnalités abandonné

@@ -512,8 +512,7 @@ async def delete_deck(query: DeckdeleteQuery):
     "/deck/user/read",
     tags=["Deck Management"],
     summary="Get user's decks",
-    description="Retrieve all decks belonging to a user, or a specific deck if deck_id is provided.",
-)
+    description="Retrieve all decks belonging to a user, or a specific deck if deck_id is provided.",)
 async def read_user_deck(
     user_id: int = Query(..., gt=0, description="User ID"),
     deck_id: Optional[int] = Query(
@@ -561,6 +560,135 @@ async def remove_card_deck(
         return {"results": results}
     except Exception as e:
         print(f"Erreur dans /deck/card/remove : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================================
+# 🔹 DECK MANAGEMENT – Player-linked Deck Operations
+# ==========================================================
+
+class DeckCreateByPlayerQuery(BaseModel):
+    user_id: int = Field(..., gt=0, description="User ID who creates the deck")
+    name: str = Field(..., description="Deck name", example="Aggro Goblins")
+    type: Optional[str] = Field(None, description="Deck format type", example="Modern")
+
+
+class DeckUpdateByPlayerQuery(BaseModel):
+    user_id: int = Field(..., gt=0, description="User ID")
+    deck_id: int = Field(..., gt=0, description="Deck ID to update")
+    name: Optional[str] = Field(None, description="New deck name")
+    type: Optional[str] = Field(None, description="New deck type")
+
+
+class DeckDeleteByPlayerQuery(BaseModel):
+    user_id: int = Field(..., gt=0, description="User ID")
+    deck_id: int = Field(..., gt=0, description="Deck ID to delete")
+
+
+class DeckOwnershipQuery(BaseModel):
+    user_id: int = Field(..., gt=0, description="User ID")
+    deck_id: int = Field(..., gt=0, description="Deck ID")
+
+
+@app.post(
+    "/deck/player/create",
+    tags=["Deck Management"],
+    summary="Create a deck linked to a specific user",
+    description="""
+    Create a new deck **and** link it to a specific player (user).
+    Returns both the created deck and the link record.
+    """,
+)
+async def create_deck_by_player(query: DeckCreateByPlayerQuery):
+    try:
+        result = deck_dao.create_user_deck(query.user_id, name=query.name, type=query.type)
+        if result is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {
+            "message": "Deck successfully created for user",
+            "deck": result["deck"],
+            "link": result["link"],
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Erreur dans /deck/player/create : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/deck/player/owns",
+    tags=["Deck Management"],
+    summary="Check if a user owns a given deck",
+    description="Returns True if the user owns the deck, False otherwise.",
+)
+async def check_deck_ownership(
+    user_id: int = Query(..., gt=0, description="User ID"),
+    deck_id: int = Query(..., gt=0, description="Deck ID"),
+):
+    try:
+        owns = deck_dao.get_by_id_player(deck_id, user_id)
+        if owns is None:
+            raise HTTPException(status_code=404, detail="User or deck not found")
+        return {"user_id": user_id, "deck_id": deck_id, "owns": owns}
+    except Exception as e:
+        print(f"Erreur dans /deck/player/owns : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/deck/player/create_simple",
+    tags=["Deck Management"],
+    summary="Create and link a deck to user (simplified version)",
+    description="Creates a new deck for a player and returns the tuple (user_id, deck_id).",
+)
+async def create_deck_player_simple(query: DeckCreateByPlayerQuery):
+    try:
+        result = deck_dao.create_by_player(query.user_id, name=query.name, type=query.type)
+        return {
+            "message": "Deck successfully created and linked",
+            "user_id": result[0],
+            "deck_id": result[1],
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Erreur dans /deck/player/create_simple : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put(
+    "/deck/player/update",
+    tags=["Deck Management"],
+    summary="Update a deck owned by a player",
+    description="Updates the deck’s attributes if both player and deck exist.",
+)
+async def update_deck_by_player(query: DeckUpdateByPlayerQuery):
+    try:
+        result = deck_dao.update_by_player(query.user_id,
+                                           query.deck_id,
+                                           name=query.name,
+                                           type=query.type)
+        if not result:
+            raise HTTPException(status_code=404, detail="User or deck not found")
+        return {"message": "Deck successfully updated", "deck": result}
+    except Exception as e:
+        print(f"Erreur dans /deck/player/update : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete(
+    "/deck/player/delete",
+    tags=["Deck Management"],
+    summary="Delete a deck owned by a player",
+    description="Deletes a deck if it belongs to the specified player.",
+)
+async def delete_deck_by_player(query: DeckDeleteByPlayerQuery):
+    try:
+        result = deck_dao.delete_by_player(query.user_id, query.deck_id)
+        return {"message": "Deck successfully deleted", "results": result}
+    except Exception as e:
+        print(f"Erreur dans /deck/player/delete : {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

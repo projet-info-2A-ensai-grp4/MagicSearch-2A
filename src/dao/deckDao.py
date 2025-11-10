@@ -3,7 +3,6 @@ from dao.cardDao import CardDao
 from dao.playerDao import PlayerDao
 
 
-
 class DeckDao(AbstractDao):
     columns_valid = {"deck_id", "name", "type"}
 
@@ -263,3 +262,73 @@ class DeckDao(AbstractDao):
                     raise
             else:
                 return None
+
+    def get_by_id_player(self, deck_id, user_id):
+        """
+        """
+        from deckDao import DeckDao
+
+        if DeckDao.exist(deck_id):
+            if self.exist(user_id):
+                try:
+                    with self:
+                        sql_query = """" SELECT deck_ FROM user_deck_link udl
+                        WHERE udl.user_id = %s
+                        AND udl.deck_id = %s;
+                        """
+                    params = (
+                        user_id,
+                        deck_id,
+                    )
+                    rows = self.cursor.execute(sql_query, params)
+                    if rows is None:
+                        return False
+                    else:
+                        return True
+                except Exception as e:
+                    print(f"Error in PlayerDao.player_get_deck: {e}")
+                    raise
+        else:
+            return None
+
+    def create_by_player(self, user_id, **kwargs):
+        """
+        """
+        try:
+            invalid_keys = set(kwargs.keys()) - self.columns_valid
+            if invalid_keys:
+                raise ValueError(f"Invalid keys: {invalid_keys}")
+
+            # Ne pas insérer deck_id s’il est auto-généré
+            insert_data = {k: v for k, v in kwargs.items() if k != "deck_id"}
+
+            if not insert_data:
+                raise ValueError("No valid data provided for deck creation")
+            self.create(**kwargs)
+            with self:
+                self.cursor.execute("""SELECT deck_id
+                                        FROM decks
+                                        ORDER BY created_at DESC
+                                        LIMIT 1;
+                                    """)
+                row = self.cursor.fetchone()
+                if not row:
+                    raise ValueError("No deck found after creation.")
+                new_deck_id = row["deck_id"]
+                sql_query = """ INSERT INTO
+                                user_deck_link (user_id, deck_id)
+                                VALUES (%s, %s)
+                            """
+                params = (user_id, new_deck_id)
+                self.cursor.execute(sql_query, params)
+                self.conn.commit()
+                return (user_id, new_deck_id)
+
+        except Exception as e:
+            print(f"Error in DeckDao.create: {e}")
+            raise
+
+    def delete_by_player(self, user_id, deck_id):
+        """
+        """
+        pass

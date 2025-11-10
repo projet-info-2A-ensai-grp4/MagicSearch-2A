@@ -168,13 +168,14 @@ class DeckDao(AbstractDao):
 
     def delete(self, id):
         """
-        Deletes a deck by its ID.
+        Deletes a deck by its ID from decks, and removes all references
+        in user_deck_link and deck_cards. Does not delete users or cards.
 
         Args:
             id (int): Deck ID to delete.
 
         Returns:
-            dict: Deleted deck record.
+            dict: Deleted deck record from decks table.
 
         Raises:
             Exception: If deletion fails.
@@ -182,19 +183,36 @@ class DeckDao(AbstractDao):
         if self.exist(id):
             try:
                 with self:
-                    sql_query = """
+                    # Delete references in deck_cards first
+                    sql_deck_cards = """
+                    DELETE FROM deck_cards
+                    WHERE deck_id = %s;
+                    """
+                    self.cursor.execute(sql_deck_cards, (id,))
+
+                    # Delete references in user_deck_link
+                    sql_user_link = """
+                    DELETE FROM user_deck_link
+                    WHERE deck_id = %s;
+                    """
+                    self.cursor.execute(sql_user_link, (id,))
+
+                    # Finally, delete the deck itself
+                    sql_deck = """
                     DELETE FROM decks
                     WHERE deck_id = %s
                     RETURNING *;
                     """
-                    param = (id,)
-                    self.cursor.execute(sql_query, param)
-                    row = self.cursor.fetchone()
+                    self.cursor.execute(sql_deck, (id,))
+                    deleted_deck = self.cursor.fetchone()
+
+                    # Commit all deletions
                     self.conn.commit()
-                    return row
+                    return deleted_deck
+
             except Exception as e:
-                print(f"Error connecting to the database: {e}")
-                exit()
+                print(f"Error deleting deck {id}: {e}")
+                raise
 
     def get_all_deck_user_id(self, user_id: int) -> list:
         """
@@ -478,21 +496,4 @@ class DeckDao(AbstractDao):
         """
         player_dao = PlayerDao()
         if player_dao.exist(user_id):
-            if self.exist(deck_id):
-                try:
-                    with self:
-                        sql_query = """
-                        DELETE FROM user_deck_link
-                        WHERE user_id = %s AND
-                        deck_id = %s
-                        RETURNING *;
-                        """
-                        param = (user_id, deck_id)
-                        self.cursor.execute(sql_query, param)
-                        row = self.cursor.fetchone()
-                        self.conn.commit()
-                        a = self.delete(deck_id)
-                        return a, row
-                except Exception as e:
-                    print(f"Error connecting to the database: {e}")
-                    exit()
+            self.delete(deck_id)

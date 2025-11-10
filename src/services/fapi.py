@@ -236,7 +236,8 @@ async def filter(query: CardFilterQuery):
     "/cards/random",
     tags=["Browse"],
     summary="Get a random card",
-    description="Retrieve a randomly selected card from the database. Perfect for discovery and inspiration!",
+    description="""Retrieve a randomly selected card from the database.
+                Perfect for discovery and inspiration!""",
     response_description="A randomly selected Magic card",
     responses={
         200: {
@@ -512,7 +513,7 @@ async def delete_deck(query: DeckdeleteQuery):
     "/deck/user/read",
     tags=["Deck Management"],
     summary="Get user's decks",
-    description="Retrieve all decks belonging to a user, or a specific deck if deck_id is provided.",
+    description="Retrieve all decks belonging to a user, or a specific deck if deck_id is provided",
 )
 async def read_user_deck(
     user_id: int = Query(..., gt=0, description="User ID"),
@@ -550,7 +551,8 @@ async def add_card_deck(query: DeckaddCardQuery):
     "/deck/card/remove",
     tags=["Deck Management"],
     summary="Remove card from deck",
-    description="Remove one copy of a card from a deck. If quantity reaches 0, removes the card entirely.",
+    description="""Remove one copy of a card from a deck. If quantity reaches 0,
+                removes the card entirely.""",
 )
 async def remove_card_deck(
     deck_id: int = Query(..., gt=0, description="Deck ID"),
@@ -577,7 +579,8 @@ async def add_to_favorites(fav: FavoriteAction, current_user: dict = Depends(get
 
 
 @app.post("/favorite/remove", tags=["Favorite"])
-async def remove_from_favorites(fav: FavoriteAction, current_user: dict = Depends(get_current_user)):
+async def remove_from_favorites(fav: FavoriteAction,
+                                current_user: dict = Depends(get_current_user)):
     try:
         result = favorite_business.remove_favorite(current_user["user_id"], fav.card_id)
         return {"message": "Removed from favorites", "favorite": result}

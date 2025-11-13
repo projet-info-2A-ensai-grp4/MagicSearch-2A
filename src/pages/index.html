@@ -30,7 +30,6 @@
 
 
     <main>
-        <!-- Hero Section -->
         <section class="hero">
             <div class="overlay"></div>
             <div class="hero-content">
@@ -42,19 +41,17 @@
                         <button type="submit">Search</button>
                     </form>
 
-                    <!-- History Section -->
                     <div class="history-container" id="historyContainer" style="display: none;">
                         <div class="history-header">
                             <span>Recent Searches</span>
                             <button class="history-close" id="historyClose">✕</button>
                         </div>
                         <div class="history-list" id="historyList">
-                            <!-- History items will be inserted here -->
+                            <!-- History items -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Filter Section -->
                 <div class="filter-container">
                     <button class="filter-toggle" id="filterToggle">
                         <span>🔍 Advanced Filters</span>
@@ -62,7 +59,6 @@
                     </button>
 
                     <div class="filter-panel" id="filterPanel">
-                        <!-- Color Filter -->
                         <div class="filter-group">
                             <label class="filter-label">Filter by Colors</label>
                             <div class="color-buttons">
@@ -84,7 +80,6 @@
                             </div>
                         </div>
 
-                        <!-- Mana Value Filter -->
                         <div class="filter-group">
                             <label class="filter-label">Mana Value Range</label>
                             <div class="mana-inputs">
@@ -94,13 +89,11 @@
                             </div>
                         </div>
 
-                        <!-- Limit -->
                         <div class="filter-group">
                             <label class="filter-label">Cards to Show</label>
                             <input type="number" id="filterLimit" class="filter-input" value="8" min="1" max="150">
                         </div>
 
-                        <!-- Action Buttons -->
                         <div class="filter-actions">
                             <button type="button" class="btn-filter-apply" id="applyFilter">Apply Filters</button>
                             <button type="button" class="btn-filter-reset" id="resetFilter">Reset</button>

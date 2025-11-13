@@ -453,7 +453,7 @@ async def login(user_data: UserLogin):
     summary="Get deck by ID",
     description="Retrieve all cards in a specific deck.",
 )
-async def reading_deck(query: DeckreadingQuery):
+async def reading_deck(query: DeckreadingQuery, current_user: dict = Depends(get_current_user)):
     try:
         results = deck_dao.get_by_id(query.deck_id)
         return {"results": results}
@@ -468,7 +468,7 @@ async def reading_deck(query: DeckreadingQuery):
     summary="Create new deck",
     description="Create a new empty deck with a name and optional format type.",
 )
-async def create_deck(query: DeckcreateQuery):
+async def create_deck(query: DeckcreateQuery, current_user: dict = Depends(get_current_user)):
     try:
         results = deck_dao.create(name=query.deck_name, type=query.deck_type)
         return {"results": results}
@@ -483,7 +483,7 @@ async def create_deck(query: DeckcreateQuery):
     summary="Update deck",
     description="Update deck name and/or type.",
 )
-async def update_deck(query: DeckupdateQuery):
+async def update_deck(query: DeckupdateQuery, current_user: dict = Depends(get_current_user)):
     try:
         results = deck_dao.update(
             query.deck_id, name=query.deck_name, type=query.deck_type
@@ -500,7 +500,7 @@ async def update_deck(query: DeckupdateQuery):
     summary="Delete deck",
     description="Permanently delete a deck and all its card associations.",
 )
-async def delete_deck(query: DeckdeleteQuery):
+async def delete_deck(query: DeckdeleteQuery, current_user: dict = Depends(get_current_user)):
     try:
         results = deck_dao.delete(query.deck_id)
         return {"results": results}
@@ -513,13 +513,15 @@ async def delete_deck(query: DeckdeleteQuery):
     "/deck/user/read",
     tags=["Deck Management"],
     summary="Get user's decks",
-    description="Retrieve all decks belonging to a user, or a specific deck if deck_id is provided.",
+    description="""Retrieve all decks belonging to a user,
+                or a specific deck if deck_id is provided.""",
 )
 async def read_user_deck(
     user_id: int = Query(..., gt=0, description="User ID"),
     deck_id: Optional[int] = Query(
         None, gt=0, description="Specific deck ID (optional)"
     ),
+    current_user: dict = Depends(get_current_user)
 ):
     try:
         if deck_id:
@@ -538,7 +540,7 @@ async def read_user_deck(
     summary="Add card to deck",
     description="Add a card to a deck. If the card already exists, increments quantity.",
 )
-async def add_card_deck(query: DeckaddCardQuery):
+async def add_card_deck(query: DeckaddCardQuery, current_user: dict = Depends(get_current_user)):
     try:
         results = deck_dao.add_card_to_deck(query.deck_id, query.card_id)
         return {"results": results}
@@ -557,6 +559,7 @@ async def add_card_deck(query: DeckaddCardQuery):
 async def remove_card_deck(
     deck_id: int = Query(..., gt=0, description="Deck ID"),
     card_id: int = Query(..., gt=0, description="Card ID to remove"),
+    current_user: dict = Depends(get_current_user)
 ):
     try:
         results = deck_dao.remove_card_from_deck(deck_id, card_id)
@@ -602,7 +605,8 @@ class DeckOwnershipQuery(BaseModel):
     Returns both the created deck and the link record.
     """,
 )
-async def create_deck_by_player(query: DeckCreateByPlayerQuery):
+async def create_deck_by_player(query: DeckCreateByPlayerQuery,
+                                current_user: dict = Depends(get_current_user)):
     try:
         result = deck_dao.create_user_deck(query.user_id, name=query.name, type=query.type)
         if result is None:
@@ -628,6 +632,7 @@ async def create_deck_by_player(query: DeckCreateByPlayerQuery):
 async def check_deck_ownership(
     user_id: int = Query(..., gt=0, description="User ID"),
     deck_id: int = Query(..., gt=0, description="Deck ID"),
+    current_user: dict = Depends(get_current_user)
 ):
     try:
         owns = deck_dao.get_by_id_player(deck_id, user_id)
@@ -645,7 +650,8 @@ async def check_deck_ownership(
     summary="Create and link a deck to user (simplified version)",
     description="Creates a new deck for a player and returns the tuple (user_id, deck_id).",
 )
-async def create_deck_player_simple(query: DeckCreateByPlayerQuery):
+async def create_deck_player_simple(query: DeckCreateByPlayerQuery,
+                                    current_user: dict = Depends(get_current_user)):
     try:
         result = deck_dao.create_by_player(query.user_id, name=query.name, type=query.type)
         return {
@@ -664,9 +670,10 @@ async def create_deck_player_simple(query: DeckCreateByPlayerQuery):
     "/deck/player/update",
     tags=["Deck Management"],
     summary="Update a deck owned by a player",
-    description="Updates the deck’s attributes if both player and deck exist.",
+    description="Updates the deck's attributes if both player and deck exist.",
 )
-async def update_deck_by_player(query: DeckUpdateByPlayerQuery):
+async def update_deck_by_player(query: DeckUpdateByPlayerQuery,
+                                current_user: dict = Depends(get_current_user)):
     try:
         result = deck_dao.update_by_player(query.user_id,
                                            query.deck_id,
@@ -686,7 +693,8 @@ async def update_deck_by_player(query: DeckUpdateByPlayerQuery):
     summary="Delete a deck owned by a player",
     description="Deletes a deck if it belongs to the specified player.",
 )
-async def delete_deck_by_player(query: DeckDeleteByPlayerQuery):
+async def delete_deck_by_player(query: DeckDeleteByPlayerQuery,
+                                current_user: dict = Depends(get_current_user)):
     try:
         result = deck_dao.delete_by_player(query.user_id, query.deck_id)
         return {"message": "Deck successfully deleted", "results": result}

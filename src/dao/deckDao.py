@@ -331,58 +331,58 @@ class DeckDao(AbstractDao):
             print(f"Error in remove_card_from_deck(): {e}")
             raise
 
-        def create_user_deck(self, user_id: int, **kwargs):
-            """
-            Creates a new deck for a specific user and links it to the user.
+    def create_user_deck(self, user_id: int, **kwargs):
+        """
+        Creates a new deck for a specific user and links it to the user.
 
-            Args:
-                user_id (int): ID of the user who will own the deck.
-                **kwargs: Deck attributes to create (must be valid columns).
+        Args:
+            user_id (int): ID of the user who will own the deck.
+            **kwargs: Deck attributes to create (must be valid columns).
 
-            Returns:
-                dict: Dictionary containing the created deck and the user-deck link:
-                    {
-                        "deck": {...},  # created deck record
-                        "link": {...}   # user-deck link record
-                    }
-                    Returns None if deck creation fails.
+        Returns:
+            dict: Dictionary containing the created deck and the user-deck link:
+                {
+                    "deck": {...},  # created deck record
+                    "link": {...}   # user-deck link record
+                }
+                Returns None if deck creation fails.
 
-            Raises:
-                ValueError: If the user does not exist or invalid keys are provided.
-                Exception: If the database operation fails.
-            """
-            player_dao = PlayerDao()
-            if player_dao.exist(user_id):
-                if not (set(kwargs.keys()).issubset(self.columns_valid)):
-                    raise ValueError(
-                        f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
-                    )
-                try:
-                    new_deck = self.create(**kwargs)
+        Raises:
+            ValueError: If the user does not exist or invalid keys are provided.
+            Exception: If the database operation fails.
+        """
+        player_dao = PlayerDao()
+        if player_dao.exist(user_id):
+            if not (set(kwargs.keys()).issubset(self.columns_valid)):
+                raise ValueError(
+                    f"Invalid keys : {set(kwargs.keys()) - self.columns_valid}"
+                )
+            try:
+                new_deck = self.create(**kwargs)
 
-                    if not new_deck or "deck_id" not in new_deck:
-                        raise ValueError("Deck creation failed — no deck_id returned.")
+                if not new_deck or "deck_id" not in new_deck:
+                    raise ValueError("Deck creation failed — no deck_id returned.")
 
-                    deck_id = new_deck["deck_id"]
-                    with self:
-                        sql_link = """
-                        INSERT INTO user_deck_link (user_id, deck_id)
-                        VALUES (%s, %s)
-                        RETURNING *;
-                        """
-                        params = (user_id, deck_id)
-                        self.cursor.execute(sql_link, params)
-                        link_row = self.cursor.fetchone()
-                        self.conn.commit()
-                    return {
-                        "deck": new_deck,
-                        "link": link_row
-                    }
-                except Exception as e:
-                    print(f"Error in DeckDao.create_user_deck: {e}")
-                    raise
-            else:
-                return None
+                deck_id = new_deck["deck_id"]
+                with self:
+                    sql_link = """
+                    INSERT INTO user_deck_link (user_id, deck_id)
+                    VALUES (%s, %s)
+                    RETURNING *;
+                    """
+                    params = (user_id, deck_id)
+                    self.cursor.execute(sql_link, params)
+                    link_row = self.cursor.fetchone()
+                    self.conn.commit()
+                return {
+                    "deck": new_deck,
+                    "link": link_row
+                }
+            except Exception as e:
+                print(f"Error in DeckDao.create_user_deck: {e}")
+                raise
+        else:
+            return None
 
     def get_by_id_player(self, deck_id, user_id):
         """

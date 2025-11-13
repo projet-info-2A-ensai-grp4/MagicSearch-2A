@@ -27,6 +27,7 @@ with dbConnection() as conn:
             deck_id INT NOT NULL,
             card_id INT NOT NULL,
             quantity INT DEFAULT 1,
+            UNIQUE (deck_id, card_id),
             FOREIGN KEY (deck_id) REFERENCES decks(deck_id),
             FOREIGN KEY (card_id) REFERENCES cards(id)
         );

@@ -60,6 +60,31 @@ function updateHeaderAuth() {
 document.addEventListener('DOMContentLoaded', () => {
   updateHeaderAuth();
   setupHistoryFeature();
+
+  // Check if returning from deck view
+  const returnToDeckView = sessionStorage.getItem('return_to_deck_view');
+  if (returnToDeckView === 'true') {
+    sessionStorage.removeItem('return_to_deck_view');
+
+    // Show message to user
+    const searchContainer = document.querySelector('.search-container');
+    if (searchContainer) {
+      const returnMessage = document.createElement('div');
+      returnMessage.className = 'return-message';
+      returnMessage.innerHTML = `
+        <p><strong>🔍 Search for cards to add to your deck</strong></p>
+        <p>Use the "+D" button on cards to add them to your deck</p>
+      `;
+      searchContainer.insertBefore(returnMessage, searchContainer.firstChild);
+
+      // Auto-remove message after 10 seconds
+      setTimeout(() => {
+        if (returnMessage.parentNode) {
+          returnMessage.remove();
+        }
+      }, 10000);
+    }
+  }
 });
 
 // History feature setup
@@ -335,6 +360,9 @@ function displayResults(data) {
       // Add favorite button (only if user is logged in)
       const user = getUserSession();
       if (user) {
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'card-buttons';
+
         const favoriteBtn = document.createElement('button');
         favoriteBtn.className = 'add-favorite-btn';
         favoriteBtn.innerHTML = '♥';
@@ -343,7 +371,19 @@ function displayResults(data) {
           e.stopPropagation();
           addToFavorites(card.id, favoriteBtn);
         };
-        cardDiv.appendChild(favoriteBtn);
+
+        const deckBtn = document.createElement('button');
+        deckBtn.className = 'add-deck-btn';
+        deckBtn.innerHTML = '+D';
+        deckBtn.title = 'Add to deck';
+        deckBtn.onclick = (e) => {
+          e.stopPropagation();
+          showAddToDeckModal(card);
+        };
+
+        buttonsContainer.appendChild(favoriteBtn);
+        buttonsContainer.appendChild(deckBtn);
+        cardDiv.appendChild(buttonsContainer);
       }
 
       cardDiv.appendChild(img);
@@ -466,5 +506,228 @@ async function addToFavorites(cardId, button) {
   } catch (error) {
     console.error('Error adding favorite:', error);
     alert('Failed to add favorite. Please try again.');
+  }
+}
+
+// Add to deck functionality
+async function showAddToDeckModal(card) {
+  const user = getUserSession();
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+  if (!user || !token) {
+    alert('You need to be logged in to add cards to a deck');
+    return;
+  }
+
+  try {
+    // Fetch user's decks
+    const response = await fetch(`${API_CONFIG.BASE_URL}/deck/user/read?user_id=${user.user_id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load decks');
+    }
+
+    const data = await response.json();
+    let decks = data.results || [];
+    
+    console.log('Full API response:', data);
+    console.log('Raw decks data:', decks);
+    
+    if (decks.length === 0) {
+      alert('You need to create a deck first! Go to the Decks page to create one.');
+      return;
+    }
+
+    // Transform deck data to ensure we have id and name
+    decks = decks.map((deck, index) => {
+      if (typeof deck === 'number') {
+        // It's just an ID
+        return {
+          id: deck,
+          name: `Deck ${deck}`
+        };
+      } else if (deck && typeof deck === 'object') {
+        // It's an object, find the right properties
+        return {
+          id: deck.id || deck.deck_id || deck.deckId || index,
+          name: deck.name || deck.deck_name || deck.deckName || `Deck ${deck.id || deck.deck_id || index}`
+        };
+      } else {
+        // Fallback
+        return {
+          id: index,
+          name: `Deck ${index}`
+        };
+      }
+    });
+
+    console.log('Transformed decks:', decks);
+
+    // Show deck selection modal
+    showDeckSelectionModal(card, decks);
+
+  } catch (error) {
+    console.error('Error loading decks:', error);
+    alert('Failed to load decks. Please try again.');
+  }
+}
+
+function showDeckSelectionModal(card, decks) {
+  // Create modal if it doesn't exist
+  let modal = document.getElementById('deckSelectionModal');
+  if (!modal) {
+    modal = createDeckSelectionModal();
+    document.body.appendChild(modal);
+  }
+
+  // Update modal content
+  const deckSelect = document.getElementById('deckSelect');
+  console.log('Available decks:', decks);
+  deckSelect.innerHTML = decks.map(deck => {
+    const deckId = deck.id || deck.deck_id;
+    const deckName = deck.name || `Deck ${deckId}`;
+    console.log('Deck:', deck, 'ID:', deckId, 'Name:', deckName);
+    return `<option value="${deckId}">${deckName}</option>`;
+  }).join('');
+
+  document.getElementById('selectedCardName').textContent = card.name;
+
+  // Set up form submission
+  const form = document.getElementById('addToDeckForm');
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const deckId = deckSelect.value;
+    console.log('Selected deckId:', deckId, 'type:', typeof deckId);
+    console.log('Select element:', deckSelect);
+    console.log('Select innerHTML:', deckSelect.innerHTML);
+    console.log('Select options:', Array.from(deckSelect.options).map(opt => ({value: opt.value, text: opt.text})));
+    console.log('Card:', card, 'Card ID:', card.id);
+    
+    if (!deckId || deckId === '' || deckId === 'null') {
+      alert('Please select a deck');
+      console.error('No deck selected. Available options:', Array.from(deckSelect.options));
+      return;
+    }
+    
+    await addCardToDeck(card.id, deckId);
+    closeDeckSelectionModal();
+  };
+
+  modal.classList.add('active');
+}
+
+function createDeckSelectionModal() {
+  const modal = document.createElement('div');
+  modal.id = 'deckSelectionModal';
+  modal.className = 'modal';
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Card to Deck</h2>
+        <span class="close-btn" onclick="closeDeckSelectionModal()">&times;</span>
+      </div>
+      <form id="addToDeckForm">
+        <div class="form-group">
+          <label>Card:</label>
+          <p id="selectedCardName" style="color: #ff6b35; font-weight: bold;"></p>
+        </div>
+        <div class="form-group">
+          <label for="deckSelect">Select Deck:</label>
+          <select id="deckSelect" required>
+            <!-- Options will be populated dynamically -->
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" onclick="closeDeckSelectionModal()" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Add to Deck</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  // Close modal when clicking outside
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeDeckSelectionModal();
+    }
+  });
+
+  return modal;
+}
+
+function closeDeckSelectionModal() {
+  const modal = document.getElementById('deckSelectionModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+async function addCardToDeck(cardId, deckId) {
+  const user = getUserSession();
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+  if (!user || !token) {
+    alert('You need to be logged in to add cards to a deck');
+    return;
+  }
+
+  console.log('addCardToDeck called with:', { cardId, deckId });
+  
+  // Validate inputs
+  if (!cardId || !deckId || deckId === '' || deckId === 'null' || deckId === 'undefined') {
+    alert('Missing card ID or deck ID');
+    console.error('Missing or invalid IDs:', { cardId, deckId, typeOfDeckId: typeof deckId });
+    return;
+  }
+
+  const deckIdInt = parseInt(deckId);
+  const cardIdInt = parseInt(cardId);
+  
+  if (isNaN(deckIdInt) || isNaN(cardIdInt)) {
+    alert('Invalid ID format');
+    console.error('NaN values:', { deckId, deckIdInt, cardId, cardIdInt });
+    return;
+  }
+
+  const payload = {
+    deck_id: deckIdInt,
+    card_id: cardIdInt
+  };
+  
+  console.log('Payload to send:', payload);
+
+  try {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/deck/card/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Server error response:', errorData);
+
+      if (errorData.detail && errorData.detail.includes('already exists')) {
+        alert('This card is already in the selected deck!');
+      } else {
+        throw new Error(`Failed to add card to deck: ${JSON.stringify(errorData)}`);
+      }
+      return;
+    }
+
+    alert('Card successfully added to deck!');
+
+  } catch (error) {
+    console.error('Error adding card to deck:', error);
+    alert('Failed to add card to deck. Please try again.');
   }
 }

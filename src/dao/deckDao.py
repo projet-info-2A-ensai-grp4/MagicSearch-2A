@@ -227,7 +227,7 @@ class DeckDao(AbstractDao):
         try:
             with self:
                 sql_query = """
-                SELECT D.deck_id
+                SELECT D.deck_id, D.name, D.type
                 FROM decks D
                 JOIN user_deck_link UDLC
                 ON D.deck_id = UDLC.deck_id
@@ -236,10 +236,10 @@ class DeckDao(AbstractDao):
                 param = (user_id,)
                 self.cursor.execute(sql_query, param)
                 rows = self.cursor.fetchall()
-                return [row[0] for row in rows]
+                return [dict(row) for row in rows]
         except Exception as e:
             print(f"Error connecting to the database: {e}")
-            exit()
+            raise
 
     def add_card_to_deck(self, deck_id: int, card_id: int):
         """

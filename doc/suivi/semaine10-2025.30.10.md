@@ -29,7 +29,8 @@ Lina Louati
 
 ### Nom Prénom élève 5
 Charles Ozeel
-- ras
+- add filter dao function which works for all features of a card. 
+
 
 
 ## Backlog

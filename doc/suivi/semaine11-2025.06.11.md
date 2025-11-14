@@ -45,8 +45,11 @@ Lina Louati
 ### Nom Prénom élève 5
 Charles Ozeel
 - [ ] update README.md préciser requirements à installer (la liste), write something about sspcloud (credentials needed for api and postgres database)
-- [x] Filtering function
-
+- [x] Filtering function test 
+- [x] correction of each dao files with the new method of connection (with dbconnection)
+- [x] fapi integration with all dao methods
+- [ ] beginning deck dao, this new functionnality should create, update, delete decks and add or remove card. 
+- [ ] integrate deck dao to fapi file
 
 ## Backlog
 > Liste des tâches en attente de prise en charge.

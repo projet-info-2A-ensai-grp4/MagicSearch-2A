@@ -30,8 +30,8 @@ Lina Louati
 ### Nom Prénom élève 5
 Charles Ozeel
 - ras
-- [ ] add CRUD methods to AbstractDao.py file,
-- [ ] Find each filter method we can add
+- [x] add CRUD methods to AbstractDao.py file,
+- [ ] thinking about how implement the filter dao method and if I should share the function between multiples functions and business-dao layer or not. 
 
 ## Backlog
 > Liste des tâches en attente de prise en charge.

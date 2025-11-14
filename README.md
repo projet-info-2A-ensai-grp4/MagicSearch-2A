@@ -37,7 +37,7 @@ By default, the opened ports of the server will be 8000 for the API and 8001 for
 ### Linux
 
 
-You will find in `src/utils/automatic_setup` a convenient shell script. In order to have a flawless installation, remember to install Gum, Python and Postgresql.Then :
+You will find in `src/utils/automatic_setup` a convenient shell script. In order to have a flawless installation, remember to install [**Gum**](https://github.com/charmbracelet/gum), Python and Postgresql.Then :
 1. `cd src/utils/automatic_setup` in the root directory of our project
 2. Make the script executable `chmod +x setup.sh`
 3. Launch it!

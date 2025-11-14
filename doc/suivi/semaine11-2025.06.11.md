@@ -17,6 +17,7 @@ Tanguy Ajas
 - [x] favorites on frontend : displaying all the favorites of the connected user, making possible for them to remove/add cards from/to their favorites
 - [x] improving frontend : index.html now looks way better
 - [x] player's history now displayed on the frontend
+- [x] decks on frontend
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

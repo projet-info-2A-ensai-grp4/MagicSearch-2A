@@ -188,8 +188,10 @@ function displayDecks(decks) {
 
         deckDiv.innerHTML = `
             <div class="deck-header">
-                <h3 class="deck-name">${deck.name || 'Unnamed Deck'}</h3>
-                <p class="deck-type">${deck.type || 'Casual'}</p>
+                <div class="deck-info">
+                    <h3 class="deck-name">${deck.name || 'Unnamed Deck'}</h3>
+                    <p class="deck-type">${deck.type || 'Casual'}</p>
+                </div>
             </div>
             <div class="deck-actions">
                 <button class="btn-outline view-edit-btn" onclick="viewDeck(${deck.deck_id})">View & Edit</button>
@@ -263,22 +265,28 @@ async function handleCreateDeck(e) {
     const deckName = formData.get('deckName');
     const deckType = formData.get('deckType');
 
+    console.log('Creating deck with:', { deckName, deckType });
+
     if (!deckType) {
-        alert('Please select a deck type');
+        alert('Please enter a deck type');
         return;
     }
 
     try {
+        const requestBody = {
+            deck_name: deckName,
+            type: deckType  // L'API attend "type" pas "deck_type" à cause de l'alias
+        };
+        
+        console.log('Sending request body:', requestBody);
+
         const response = await fetch(`${API_CONFIG.BASE_URL}/deck/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-                deck_name: deckName,
-                deck_type: deckType
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
@@ -388,16 +396,38 @@ function showDeckViewModal(deck, cards) {
     } else {
         // Deck has cards
         deckViewContent.innerHTML = `
-            <div class="deck-actions">
-                <button class="btn-primary" onclick="goToSearch()">Add More Cards</button>
+            <div class="deck-header-info">
+                <div class="deck-stats">
+                    <div class="stat">
+                        <span class="stat-number">${cards.length}</span>
+                        <span class="stat-label">Cards</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">${cards.reduce((total, card) => total + (card.quantity || 1), 0)}</span>
+                        <span class="stat-label">Total</span>
+                    </div>
+                </div>
+                <button class="btn-primary add-cards-btn" onclick="goToSearch()">
+                    <span class="add-icon">+</span>
+                    Add More Cards
+                </button>
             </div>
-            <div class="cards-grid">
+            <div class="cards-grid-clean">
                 ${cards.map(card => `
-                    <div class="card-item">
-                        <img src="${card.image_url || ''}" alt="${card.name}" class="card-image">
-                        <div class="card-info">
-                            <h4>${card.name}</h4>
-                            <p>Quantity: ${card.quantity || 1}</p>
+                    <div class="clean-card-item" data-card-id="${card.id}">
+                        <div class="card-image-wrapper">
+                            <img src="${card.image_url || ''}" alt="${card.name}" class="clean-card-image">
+                            <div class="card-controls">
+                                <button class="remove-btn" onclick="removeCardFromDeck(${card.id}, ${deck.deck_id})" title="Remove from deck">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3,6 5,6 21,6"></polyline>
+                                        <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                                    </svg>
+                                </button>
+                                <div class="qty-badge">
+                                    <span>${card.quantity || 1}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `).join('')}
@@ -499,5 +529,42 @@ async function deleteDeck(deckId) {
     } catch (error) {
         console.error('Error deleting deck:', error);
         alert('Failed to delete deck. Please try again.');
+    }
+}
+
+// Remove card from deck
+async function removeCardFromDeck(cardId, deckId) {
+    const user = getUserSession();
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+    if (!user || !token) {
+        alert('You need to be logged in to modify deck contents');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to remove this card from the deck?')) {
+        return;
+    }
+
+    try {
+        // Use query parameters as per backend API
+        const response = await fetch(`${API_CONFIG.BASE_URL}/deck/card/remove?deck_id=${deckId}&card_id=${cardId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || 'Failed to remove card from deck');
+        }
+
+        // Refresh the deck view
+        await viewDeck(deckId);
+
+    } catch (error) {
+        console.error('Error removing card from deck:', error);
+        alert('Failed to remove card from deck. Please try again.');
     }
 }

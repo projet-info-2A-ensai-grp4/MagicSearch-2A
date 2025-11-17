@@ -627,27 +627,32 @@ function createDeckSelectionModal() {
   modal.className = 'modal';
 
   modal.innerHTML = `
-    <div class="modal-content">
+    <div class="modal-content deck-selection-modal">
       <div class="modal-header">
-        <h2>Add Card to Deck</h2>
+        <h2>📦 Add Card to Deck</h2>
         <span class="close-btn" onclick="closeDeckSelectionModal()">&times;</span>
       </div>
-      <form id="addToDeckForm">
-        <div class="form-group">
-          <label>Card:</label>
-          <p id="selectedCardName" style="color: #ff6b35; font-weight: bold;"></p>
+      <div class="modal-body">
+        <div class="selected-card-preview">
+          <p class="card-label">Selected Card:</p>
+          <p id="selectedCardName" class="selected-card-name"></p>
         </div>
-        <div class="form-group">
-          <label for="deckSelect">Select Deck:</label>
-          <select id="deckSelect" required>
-            <!-- Options will be populated dynamically -->
-          </select>
-        </div>
-        <div class="form-actions">
-          <button type="button" onclick="closeDeckSelectionModal()" class="btn-outline">Cancel</button>
-          <button type="submit" class="btn-primary">Add to Deck</button>
-        </div>
-      </form>
+        <form id="addToDeckForm">
+          <div class="form-group">
+            <label for="deckSelect">Choose a deck:</label>
+            <select id="deckSelect" required class="deck-select">
+              <!-- Options will be populated dynamically -->
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="button" onclick="closeDeckSelectionModal()" class="btn-outline">Cancel</button>
+            <button type="submit" class="btn-primary">
+              <span>Add to Deck</span>
+              <span class="btn-icon">➕</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   `;
 

@@ -56,11 +56,16 @@ You could also use WSL.
 Once installed, you can relaunch the server easily!
 1. Start the API
    `cd <root directory of the project\>`
+   
    `export PYTHONPATH=$(pwd)/src`
+
    `python src`
-2. Start the web server
+3. Start the web server
    `cd <root directory of the project\>`
+
    `cd src && python -m http.server 8001`
+### Tests
+Install `pytest-cov` with `pip`. Ensure PYTHONPATH is set to `<root_directory/src` and enjoy running `pytest --cov=src/tests src/` ;) (for tests of the project). Then `pytest --cov=src/ src/` (for all tests, including those testing some utils files).
 
 
 Our embedding model is *(for now)* hard coded to the sspcloud openwebui api, you can change it if you look a bit in the code. Remember that your .env file should look like this:

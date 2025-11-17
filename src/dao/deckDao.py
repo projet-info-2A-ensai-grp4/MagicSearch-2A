@@ -104,15 +104,33 @@ class DeckDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT c.id, c.name, c.image_url, dc.quantity, d.name, d.type "
-                    "FROM decks d                                                    "
-                    "JOIN deck_cards dc ON d.deck_id = dc.deck_id                    "
-                    "JOIN cards c ON dc.card_id = c.id                               "
-                    "WHERE d.deck_id = %s;                                           ",
+                    "SELECT c.id, c.name, c.image_url, dc.quantity, d.name as deck_name, d.type as deck_type "
+                    "FROM decks d                                                                              "
+                    "LEFT JOIN deck_cards dc ON d.deck_id = dc.deck_id                                        "
+                    "LEFT JOIN cards c ON dc.card_id = c.id                                                   "
+                    "WHERE d.deck_id = %s;                                                                    ",
                     (id,),
                 )
                 results = self.cursor.fetchall()
-                return results
+
+                # If deck is empty, return empty list but ensure deck exists
+                if not results:
+                    self.cursor.execute(
+                        "SELECT deck_id FROM decks WHERE deck_id = %s",
+                        (id,),
+                    )
+                    deck_exists = self.cursor.fetchone()
+                    if not deck_exists:
+                        raise ValueError(f"Deck with ID {id} does not exist")
+                    return []
+
+                # Filter out None values for empty decks
+                filtered_results = []
+                for result in results:
+                    if result['id'] is not None:  # Card exists
+                        filtered_results.append(result)
+
+                return filtered_results
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:

@@ -261,6 +261,12 @@ async function handleCreateDeck(e) {
 
     const formData = new FormData(e.target);
     const deckName = formData.get('deckName');
+    const deckType = formData.get('deckType');
+
+    if (!deckType) {
+        alert('Please select a deck type');
+        return;
+    }
 
     try {
         const response = await fetch(`${API_CONFIG.BASE_URL}/deck/create`, {
@@ -271,7 +277,7 @@ async function handleCreateDeck(e) {
             },
             body: JSON.stringify({
                 deck_name: deckName,
-                deck_type: 'Casual'  // Default type
+                deck_type: deckType
             })
         });
 
@@ -445,6 +451,8 @@ function goToSearch() {
 
 // Delete deck functionality
 async function deleteDeck(deckId) {
+    console.log('deleteDeck called with deckId:', deckId);
+
     const user = getUserSession();
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
@@ -459,6 +467,8 @@ async function deleteDeck(deckId) {
     }
 
     try {
+        console.log('Sending delete request for deck:', deckId);
+
         const response = await fetch(`${API_CONFIG.BASE_URL}/deck/delete`, {
             method: 'DELETE',
             headers: {
@@ -470,10 +480,16 @@ async function deleteDeck(deckId) {
             })
         });
 
+        console.log('Delete response status:', response.status);
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+            console.error('Delete failed with error:', errorData);
             throw new Error(errorData.detail || 'Failed to delete deck');
         }
+
+        const responseData = await response.json();
+        console.log('Delete successful, response:', responseData);
 
         // Refresh the decks list
         await loadUserDecks(token, user.user_id);

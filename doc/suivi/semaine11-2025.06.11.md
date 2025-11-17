@@ -41,6 +41,7 @@ Lina Louati
 - [x] start of table of contents for the final report
 - [x] start of the final report (introduction, first parts)
 - [x] various tests 
+- [x] creation of a logo for our app
 
 
 ### Nom Prénom élève 5

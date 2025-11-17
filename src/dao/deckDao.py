@@ -178,11 +178,13 @@ class DeckDao(AbstractDao):
                     "INSERT INTO deck_cards(deck_id, card_id, quantity) "
                     "VALUES (%s, %s, 1)                                 "
                     "ON CONFLICT (deck_id, card_id)                     "
-                    "DO UPDATE SET quantity = deck_cards.quantity + 1;  ",
+                    "DO UPDATE SET quantity = deck_cards.quantity + 1   "
+                    "RETURNING deck_id, card_id, quantity;              ",
                     (deck_id, card_id),
                 )
-                rows = self.cursor.fetchall()
-                return rows
+                result = self.cursor.fetchone()
+                self.conn.commit()
+                return result
         except psycopg2.OperationalError as e:
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:

@@ -521,7 +521,7 @@ async function showAddToDeckModal(card) {
 
   try {
     // Fetch user's decks
-    const response = await fetch(`${API_CONFIG.BASE_URL}/deck/user/read?user_id=${user.user_id}`, {
+    const response = await fetch(`${API_CONFIG.BASE_URL}/deck/user/read`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -534,10 +534,10 @@ async function showAddToDeckModal(card) {
 
     const data = await response.json();
     let decks = data.results || [];
-    
+
     console.log('Full API response:', data);
     console.log('Raw decks data:', decks);
-    
+
     if (decks.length === 0) {
       alert('You need to create a deck first! Go to the Decks page to create one.');
       return;
@@ -554,8 +554,8 @@ async function showAddToDeckModal(card) {
       } else if (deck && typeof deck === 'object') {
         // It's an object, find the right properties
         return {
-          id: deck.id || deck.deck_id || deck.deckId || index,
-          name: deck.name || deck.deck_name || deck.deckName || `Deck ${deck.id || deck.deck_id || index}`
+          id: deck.deck_id || deck.id || deck.deckId || index,
+          name: deck.name || deck.deck_name || deck.deckName || `Deck ${deck.deck_id || deck.id || index}`
         };
       } else {
         // Fallback
@@ -607,13 +607,13 @@ function showDeckSelectionModal(card, decks) {
     console.log('Select innerHTML:', deckSelect.innerHTML);
     console.log('Select options:', Array.from(deckSelect.options).map(opt => ({value: opt.value, text: opt.text})));
     console.log('Card:', card, 'Card ID:', card.id);
-    
+
     if (!deckId || deckId === '' || deckId === 'null') {
       alert('Please select a deck');
       console.error('No deck selected. Available options:', Array.from(deckSelect.options));
       return;
     }
-    
+
     await addCardToDeck(card.id, deckId);
     closeDeckSelectionModal();
   };
@@ -678,7 +678,7 @@ async function addCardToDeck(cardId, deckId) {
   }
 
   console.log('addCardToDeck called with:', { cardId, deckId });
-  
+
   // Validate inputs
   if (!cardId || !deckId || deckId === '' || deckId === 'null' || deckId === 'undefined') {
     alert('Missing card ID or deck ID');
@@ -688,7 +688,7 @@ async function addCardToDeck(cardId, deckId) {
 
   const deckIdInt = parseInt(deckId);
   const cardIdInt = parseInt(cardId);
-  
+
   if (isNaN(deckIdInt) || isNaN(cardIdInt)) {
     alert('Invalid ID format');
     console.error('NaN values:', { deckId, deckIdInt, cardId, cardIdInt });
@@ -699,7 +699,7 @@ async function addCardToDeck(cardId, deckId) {
     deck_id: deckIdInt,
     card_id: cardIdInt
   };
-  
+
   console.log('Payload to send:', payload);
 
   try {

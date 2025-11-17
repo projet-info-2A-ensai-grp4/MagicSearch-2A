@@ -136,7 +136,7 @@ async function loadUserDecks(token, userId) {
     }
 
     try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/deck/user/read?user_id=${userId}`, {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/deck/user/read`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -189,10 +189,11 @@ function displayDecks(decks) {
         deckDiv.innerHTML = `
             <div class="deck-header">
                 <h3 class="deck-name">${deck.name || 'Unnamed Deck'}</h3>
+                <p class="deck-type">${deck.type || 'Casual'}</p>
             </div>
             <div class="deck-actions">
-                <button class="btn-outline view-edit-btn" onclick="viewDeck(${deck.id})">View & Edit</button>
-                <button class="btn-danger delete-deck-btn">Delete</button>
+                <button class="btn-outline view-edit-btn" onclick="viewDeck(${deck.deck_id})">View & Edit</button>
+                <button class="btn-danger delete-deck-btn" onclick="deleteDeck(${deck.deck_id})">Delete</button>
             </div>
         `;
 
@@ -262,16 +263,15 @@ async function handleCreateDeck(e) {
     const deckName = formData.get('deckName');
 
     try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/deck/player/create`, {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/deck/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                user_id: user.user_id,
-                name: deckName,
-                type: 'Casual'  // Default type since we removed the format field
+                deck_name: deckName,
+                deck_type: 'Casual'  // Default type
             })
         });
 
@@ -303,7 +303,7 @@ async function viewDeck(deckId) {
 
     try {
         // Get deck details
-        const deckResponse = await fetch(`${API_CONFIG.BASE_URL}/deck/user/read?user_id=${user.user_id}`, {
+        const deckResponse = await fetch(`${API_CONFIG.BASE_URL}/deck/user/read`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -315,7 +315,7 @@ async function viewDeck(deckId) {
         }
 
         const deckData = await deckResponse.json();
-        const deck = deckData.results.find(d => d.id === deckId);
+        const deck = deckData.results.find(d => d.deck_id === deckId);
 
         if (!deck) {
             throw new Error('Deck not found');
@@ -441,4 +441,47 @@ function goToSearch() {
     sessionStorage.setItem('return_to_deck_view', 'true');
     // Redirect to home page
     window.location.href = 'index.html';
+}
+
+// Delete deck functionality
+async function deleteDeck(deckId) {
+    const user = getUserSession();
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+    if (!user || !token) {
+        alert('You need to be logged in to delete a deck');
+        return;
+    }
+
+    // Confirm deletion
+    if (!confirm('Are you sure you want to delete this deck? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/deck/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                deck_id: deckId
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || 'Failed to delete deck');
+        }
+
+        // Refresh the decks list
+        await loadUserDecks(token, user.user_id);
+
+        alert('Deck successfully deleted!');
+
+    } catch (error) {
+        console.error('Error deleting deck:', error);
+        alert('Failed to delete deck. Please try again.');
+    }
 }

@@ -6,7 +6,7 @@ import psycopg2
 class DeckDao(AbstractDao):
     # CREATE
 
-    def create(self, user_id, name, format):
+    def create(self, user_id, name, deck_type):
         """
         Create a new deck for a user.
 
@@ -16,8 +16,8 @@ class DeckDao(AbstractDao):
             The user id.
         name : str
             The name of the deck.
-        format : str
-            The format of the deck.
+        deck_type : str
+            The type of the deck.
 
         Returns
         -------
@@ -37,7 +37,7 @@ class DeckDao(AbstractDao):
                     "INSERT INTO decks (name, type) "
                     "VALUES (%s, %s)             "
                     "RETURNING deck_id, name, type",
-                    (name, format),
+                    (name, deck_type),
                 )
                 row = self.cursor.fetchone()
 
@@ -104,7 +104,7 @@ class DeckDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT c.id, c.name, c.image_url, dc.quantity, d.name, d.format "
+                    "SELECT c.id, c.name, c.image_url, dc.quantity, d.name, d.type "
                     "FROM decks d                                                    "
                     "JOIN deck_cards dc ON d.deck_id = dc.deck_id                    "
                     "JOIN cards c ON dc.card_id = c.id                               "
@@ -131,7 +131,7 @@ class DeckDao(AbstractDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT d.deck_id, d.name, d.format "
+                    "SELECT d.deck_id, d.name, d.type "
                     "FROM decks d                       "
                     "JOIN user_deck_link ud             "
                     "ON d.deck_id = ud.deck_id          "

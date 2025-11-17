@@ -92,7 +92,7 @@ class DeckBusiness:
             'removed_at': datetime.now()
         }
 
-    def create_new_deck(self, user_id, deck_name, format):
+    def create_new_deck(self, user_id, deck_name, deck_type):
         """
         Create a new deck for a user.
 
@@ -102,25 +102,25 @@ class DeckBusiness:
             The user id.
         deck_name : str
             The name of the new deck.
-        format : str
-            The format of the deck (e.g., 'Standard', 'Modern').
+        deck_type : str
+            The type of the deck (e.g., 'Standard', 'Modern').
 
         Returns
         -------
         dict :
             Dictionary containing the new deck information :
-            {'deck_id': int, 'user_id': int, 'deck_name': str, 'format': str}.
+            {'deck_id': int, 'user_id': int, 'deck_name': str, 'deck_type': str}.
         """
         if not self.user.exist(user_id):
             raise ValueError("This user_id does not exist")
 
-        created_deck = self.deck.create(user_id, deck_name, format)
+        created_deck = self.deck.create(user_id, deck_name, deck_type)
 
         return {
             'deck_id': created_deck['deck_id'],
             'user_id': user_id,
             'deck_name': created_deck['name'],
-            'format': created_deck['type']
+            'deck_type': created_deck['type']
         }
 
     def delete_deck(self, user_id, deck_id):

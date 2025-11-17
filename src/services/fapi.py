@@ -553,8 +553,7 @@ async def add_card_deck(query: DeckaddCardQuery, current_user: dict = Depends(ge
     "/deck/card/remove",
     tags=["Deck Management"],
     summary="Remove card from deck",
-    description="""Remove one copy of a card from a deck. If quantity reaches 0,
-                removes the card entirely. Only the deck owner can remove cards.""",
+    description="""Entirely remove a card from a deck, regardless of quantity.""",
 )
 async def remove_card_deck(
     deck_id: int = Query(..., gt=0, description="Deck ID"),

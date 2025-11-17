@@ -67,7 +67,7 @@ Once installed, you can relaunch the server easily!
 ### Tests
 Install `pytest-cov` with `pip`. Ensure PYTHONPATH is set to `<root_directory/src` and enjoy running `pytest --cov=src/tests src/` ;) (for tests of the project). Then `pytest --cov=src/ src/` (for all tests, including those testing some utils files).
 
-
+### .env
 Our embedding model is *(for now)* hard coded to the sspcloud openwebui api, you can change it if you look a bit in the code. Remember that your .env file should look like this:
 ```
 # Database Configuration

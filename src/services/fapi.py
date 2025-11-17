@@ -8,6 +8,7 @@ from dao.userDao import UserDao
 import hashlib
 from services.userService import UserService
 from dao.deckDao import DeckDao
+from business_object.deckBusiness import DeckBusiness
 from utils.auth import create_access_token
 from utils.auth import get_current_user
 from dao.favoriteDao import FavoriteDao
@@ -48,6 +49,7 @@ card_dao = CardDao()
 deck_dao = DeckDao()
 favorite_dao = FavoriteDao()
 user_dao = UserDao()
+deck_business = DeckBusiness(deck_dao, user_dao, card_dao)
 favorite_business = FavoriteBusiness(favorite_dao, user_dao, card_dao)
 history_dao = HistoryDao()
 history_business = HistoryBusiness(history_dao, user_dao)
@@ -447,16 +449,20 @@ async def login(user_data: UserLogin):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+
 @app.post(
     "/deck/read",
     tags=["Deck Management"],
     summary="Get deck by ID",
-    description="Retrieve all cards in a specific deck.",
+    description="Retrieve all cards in a specific deck. Only the deck owner can access it.",
 )
 async def reading_deck(query: DeckreadingQuery, current_user: dict = Depends(get_current_user)):
     try:
-        results = deck_dao.get_by_id(query.deck_id)
+        user_id = current_user['user_id']
+        results = deck_business.get_deck_details(user_id, query.deck_id)
         return {"results": results}
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         print(f"Erreur dans /deck/read : {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -470,27 +476,13 @@ async def reading_deck(query: DeckreadingQuery, current_user: dict = Depends(get
 )
 async def create_deck(query: DeckcreateQuery, current_user: dict = Depends(get_current_user)):
     try:
-        results = deck_dao.create(name=query.deck_name, type=query.deck_type)
+        user_id = current_user['user_id']
+        results = deck_business.create_new_deck(user_id, query.deck_name, query.deck_type or "Standard")
         return {"results": results}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         print(f"Erreur dans /deck/create : {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.put(
-    "/deck/update",
-    tags=["Deck Management"],
-    summary="Update deck",
-    description="Update deck name and/or type.",
-)
-async def update_deck(query: DeckupdateQuery, current_user: dict = Depends(get_current_user)):
-    try:
-        results = deck_dao.update(
-            query.deck_id, name=query.deck_name, type=query.deck_type
-        )
-        return {"results": results}
-    except Exception as e:
-        print(f"Erreur dans /deck/update : {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -498,12 +490,15 @@ async def update_deck(query: DeckupdateQuery, current_user: dict = Depends(get_c
     "/deck/delete",
     tags=["Deck Management"],
     summary="Delete deck",
-    description="Permanently delete a deck and all its card associations.",
+    description="Permanently delete a deck and all its card associations. Only the deck owner can delete it.",
 )
 async def delete_deck(query: DeckdeleteQuery, current_user: dict = Depends(get_current_user)):
     try:
-        results = deck_dao.delete(query.deck_id)
+        user_id = current_user['user_id']
+        results = deck_business.delete_deck(user_id, query.deck_id)
         return {"results": results}
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         print(f"Erreur dans /deck/delete : {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -513,22 +508,24 @@ async def delete_deck(query: DeckdeleteQuery, current_user: dict = Depends(get_c
     "/deck/user/read",
     tags=["Deck Management"],
     summary="Get user's decks",
-    description="""Retrieve all decks belonging to a user,
+    description="""Retrieve all decks belonging to the authenticated user,
                 or a specific deck if deck_id is provided.""",
 )
 async def read_user_deck(
-    user_id: int = Query(..., gt=0, description="User ID"),
     deck_id: Optional[int] = Query(
         None, gt=0, description="Specific deck ID (optional)"
     ),
     current_user: dict = Depends(get_current_user)
 ):
     try:
+        user_id = current_user['user_id']
         if deck_id:
-            results = deck_dao.get_by_id(deck_id)
+            results = deck_business.get_deck_details(user_id, deck_id)
         else:
-            results = deck_dao.get_all_deck_user_id(user_id)
+            results = deck_business.get_user_decks(user_id)
         return {"results": results}
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         print(f"Erreur dans /deck/user/read : {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -538,12 +535,15 @@ async def read_user_deck(
     "/deck/card/add",
     tags=["Deck Management"],
     summary="Add card to deck",
-    description="Add a card to a deck. If the card already exists, increments quantity.",
+    description="Add a card to a deck. If the card already exists, increments quantity. Only the deck owner can add cards.",
 )
 async def add_card_deck(query: DeckaddCardQuery, current_user: dict = Depends(get_current_user)):
     try:
-        results = deck_dao.add_card_to_deck(query.deck_id, query.card_id)
+        user_id = current_user['user_id']
+        results = deck_business.add_card_to_deck(user_id, query.card_id, query.deck_id)
         return {"results": results}
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         print(f"Erreur dans /deck/card/add : {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -554,7 +554,7 @@ async def add_card_deck(query: DeckaddCardQuery, current_user: dict = Depends(ge
     tags=["Deck Management"],
     summary="Remove card from deck",
     description="""Remove one copy of a card from a deck. If quantity reaches 0,
-                removes the card entirely.""",
+                removes the card entirely. Only the deck owner can remove cards.""",
 )
 async def remove_card_deck(
     deck_id: int = Query(..., gt=0, description="Deck ID"),
@@ -562,145 +562,15 @@ async def remove_card_deck(
     current_user: dict = Depends(get_current_user)
 ):
     try:
-        results = deck_dao.remove_card_from_deck(deck_id, card_id)
+        user_id = current_user['user_id']
+        results = deck_business.remove_card_from_deck(user_id, card_id, deck_id)
         return {"results": results}
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except Exception as e:
         print(f"Erreur dans /deck/card/remove : {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ==========================================================
-# 🔹 DECK MANAGEMENT – Player-linked Deck Operations
-# ==========================================================
-
-class DeckCreateByPlayerQuery(BaseModel):
-    user_id: int = Field(..., gt=0, description="User ID who creates the deck")
-    name: str = Field(..., description="Deck name", example="Aggro Goblins")
-    type: Optional[str] = Field(None, description="Deck format type", example="Modern")
-
-
-class DeckUpdateByPlayerQuery(BaseModel):
-    user_id: int = Field(..., gt=0, description="User ID")
-    deck_id: int = Field(..., gt=0, description="Deck ID to update")
-    name: Optional[str] = Field(None, description="New deck name")
-    type: Optional[str] = Field(None, description="New deck type")
-
-
-class DeckDeleteByPlayerQuery(BaseModel):
-    user_id: int = Field(..., gt=0, description="User ID")
-    deck_id: int = Field(..., gt=0, description="Deck ID to delete")
-
-
-class DeckOwnershipQuery(BaseModel):
-    user_id: int = Field(..., gt=0, description="User ID")
-    deck_id: int = Field(..., gt=0, description="Deck ID")
-
-
-@app.post(
-    "/deck/player/create",
-    tags=["Deck Management"],
-    summary="Create a deck linked to a specific user",
-    description="""
-    Create a new deck **and** link it to a specific player (user).
-    Returns both the created deck and the link record.
-    """,
-)
-async def create_deck_by_player(query: DeckCreateByPlayerQuery,
-                                current_user: dict = Depends(get_current_user)):
-    try:
-        result = deck_dao.create_user_deck(query.user_id, name=query.name, type=query.type)
-        if result is None:
-            raise HTTPException(status_code=404, detail="User not found")
-        return {
-            "message": "Deck successfully created for user",
-            "deck": result["deck"],
-            "link": result["link"],
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        print(f"Erreur dans /deck/player/create : {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get(
-    "/deck/player/owns",
-    tags=["Deck Management"],
-    summary="Check if a user owns a given deck",
-    description="Returns True if the user owns the deck, False otherwise.",
-)
-async def check_deck_ownership(
-    user_id: int = Query(..., gt=0, description="User ID"),
-    deck_id: int = Query(..., gt=0, description="Deck ID"),
-    current_user: dict = Depends(get_current_user)
-):
-    try:
-        owns = deck_dao.get_by_id_player(deck_id, user_id)
-        if owns is None:
-            raise HTTPException(status_code=404, detail="User or deck not found")
-        return {"user_id": user_id, "deck_id": deck_id, "owns": owns}
-    except Exception as e:
-        print(f"Erreur dans /deck/player/owns : {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post(
-    "/deck/player/create_simple",
-    tags=["Deck Management"],
-    summary="Create and link a deck to user (simplified version)",
-    description="Creates a new deck for a player and returns the tuple (user_id, deck_id).",
-)
-async def create_deck_player_simple(query: DeckCreateByPlayerQuery,
-                                    current_user: dict = Depends(get_current_user)):
-    try:
-        result = deck_dao.create_by_player(query.user_id, name=query.name, type=query.type)
-        return {
-            "message": "Deck successfully created and linked",
-            "user_id": result[0],
-            "deck_id": result[1],
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        print(f"Erreur dans /deck/player/create_simple : {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.put(
-    "/deck/player/update",
-    tags=["Deck Management"],
-    summary="Update a deck owned by a player",
-    description="Updates the deck's attributes if both player and deck exist.",
-)
-async def update_deck_by_player(query: DeckUpdateByPlayerQuery,
-                                current_user: dict = Depends(get_current_user)):
-    try:
-        result = deck_dao.update_by_player(query.user_id,
-                                           query.deck_id,
-                                           name=query.name,
-                                           type=query.type)
-        if not result:
-            raise HTTPException(status_code=404, detail="User or deck not found")
-        return {"message": "Deck successfully updated", "deck": result}
-    except Exception as e:
-        print(f"Erreur dans /deck/player/update : {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.delete(
-    "/deck/player/delete",
-    tags=["Deck Management"],
-    summary="Delete a deck owned by a player",
-    description="Deletes a deck if it belongs to the specified player.",
-)
-async def delete_deck_by_player(query: DeckDeleteByPlayerQuery,
-                                current_user: dict = Depends(get_current_user)):
-    try:
-        result = deck_dao.delete_by_player(query.user_id, query.deck_id)
-        return {"message": "Deck successfully deleted", "results": result}
-    except Exception as e:
-        print(f"Erreur dans /deck/player/delete : {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/favorite/add", tags=["Favorite"])

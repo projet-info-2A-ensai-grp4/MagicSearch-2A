@@ -229,21 +229,25 @@ class DeckDao(AbstractDao):
         """
         try:
             with self:
+                # Supprimer les cartes du deck
                 self.cursor.execute(
                     "DELETE FROM deck_cards "
                     "WHERE deck_id = %s     ",
                     (id,),
                 )
 
+                # Supprimer le lien user-deck
                 self.cursor.execute(
                     "DELETE FROM user_deck_link "
                     "WHERE deck_id = %s         ",
                     (id,),
                 )
 
+                # Supprimer le deck et récupérer les infos supprimées
                 self.cursor.execute(
-                    "DELETE FROM decks          "
-                    "WHERE deck_id = %s         ",
+                    "DELETE FROM decks              "
+                    "WHERE deck_id = %s             "
+                    "RETURNING deck_id, name, type  ",
                     (id,),
                 )
 

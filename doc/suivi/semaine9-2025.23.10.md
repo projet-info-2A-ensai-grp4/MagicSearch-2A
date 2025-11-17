@@ -17,8 +17,6 @@ Alexandre Gasowski
 
 ### Nom Prénom élève 3
 Victor Jean
-- [x] edited function
-- [x] global vectorize function (in a new service folder!)
 - [x] Setup script done
 - [x] More data to work with for the embedding
 - [x] New database

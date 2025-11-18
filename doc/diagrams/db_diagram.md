@@ -41,13 +41,14 @@ erDiagram
         text text_to_embed
         vector embedding
         json raw
+        text image_url
     }
 
     users {
         int user_id PK
         varchar username
         varchar email
-        varchar password
+        varchar password_hash
         int role_id FK
     }
 
@@ -58,7 +59,6 @@ erDiagram
 
     decks {
         int deck_id PK
-        int user_id FK
         varchar type
         varchar name
     }

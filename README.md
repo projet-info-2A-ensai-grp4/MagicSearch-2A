@@ -28,6 +28,10 @@ Search Magic: The Gathering cards locally via a FastAPI instance and natural-lan
 '-  ()_.\,\,   -
 ```
 
+## Public instance
+
+A public instance is available [here](https://user-victorjean-410393-user-8001.user.lab.sspcloud.fr/pages/).
+
 ## Installation
 
 You can deploy this project on your own machine if you want. You will need *Python* and *Postgresql*, and optionnaly *Gum* if you want an automatic setup.
@@ -82,12 +86,6 @@ LLM_API_KEY=
 ### A word about SSPCloud
 
 SSPCloud is a community platform for public statistics, offering tools and resources for statistical data processing and data science. We are using their API to embed our cards (openwebui api provided by them).
-
-## Usage
-
-### Public instance
-
-A public instance is available [here](https://user-victorjean-410393-user-8001.user.lab.sspcloud.fr/pages/).
 
 ## Work reports
 

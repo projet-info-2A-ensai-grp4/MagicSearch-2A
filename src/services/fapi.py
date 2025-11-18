@@ -5,6 +5,7 @@ from typing import List, Optional, Dict
 from dao.playerDao import PlayerDao
 from dao.cardDao import CardDao
 from dao.userDao import UserDao
+from dao.adminDao import AdminDao
 import hashlib
 from services.userService import UserService
 from dao.deckDao import DeckDao
@@ -49,6 +50,7 @@ card_dao = CardDao()
 deck_dao = DeckDao()
 favorite_dao = FavoriteDao()
 user_dao = UserDao()
+admin_dao = AdminDao()
 deck_business = DeckBusiness(deck_dao, user_dao, card_dao)
 favorite_business = FavoriteBusiness(favorite_dao, user_dao, card_dao)
 history_dao = HistoryDao()
@@ -158,6 +160,18 @@ class FavoriteAction(BaseModel):
 
 class HistoryAction(BaseModel):
     prompt: str = Field(..., description="Search text to store in history")
+
+
+# Admin models
+class AdminUserDelete(BaseModel):
+    user_id: int = Field(..., gt=0, description="ID of the user to delete")
+
+
+class AdminUserUpdateUsername(BaseModel):
+    user_id: int = Field(..., gt=0, description="ID of the user to update")
+    username: str = Field(
+        ..., min_length=3, max_length=50, description="New username for the user"
+    )
 
 
 @app.post(
@@ -449,7 +463,6 @@ async def login(user_data: UserLogin):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-
 @app.post(
     "/deck/read",
     tags=["Deck Management"],
@@ -477,7 +490,8 @@ async def reading_deck(query: DeckreadingQuery, current_user: dict = Depends(get
 async def create_deck(query: DeckcreateQuery, current_user: dict = Depends(get_current_user)):
     try:
         user_id = current_user['user_id']
-        results = deck_business.create_new_deck(user_id, query.deck_name, query.deck_type or "Standard")
+        results = deck_business.create_new_deck(user_id, query.deck_name,
+                                                query.deck_type or "Standard")
         return {"results": results}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -490,7 +504,8 @@ async def create_deck(query: DeckcreateQuery, current_user: dict = Depends(get_c
     "/deck/delete",
     tags=["Deck Management"],
     summary="Delete deck",
-    description="Permanently delete a deck and all its card associations. Only the deck owner can delete it.",
+    description="""Permanently delete a deck and all its card associations.
+                Only the deck owner can delete it.""",
 )
 async def delete_deck(query: DeckdeleteQuery, current_user: dict = Depends(get_current_user)):
     try:
@@ -535,7 +550,8 @@ async def read_user_deck(
     "/deck/card/add",
     tags=["Deck Management"],
     summary="Add card to deck",
-    description="Add a card to a deck. If the card already exists, increments quantity. Only the deck owner can add cards.",
+    description="""Add a card to a deck. If the card already exists, increments quantity.
+                Only the deck owner can add cards.""",
 )
 async def add_card_deck(query: DeckaddCardQuery, current_user: dict = Depends(get_current_user)):
     try:
@@ -569,7 +585,6 @@ async def remove_card_deck(
     except Exception as e:
         print(f"Erreur dans /deck/card/remove : {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 @app.post("/favorite/add", tags=["Favorite"])
@@ -629,5 +644,87 @@ async def list_history(current_user: dict = Depends(get_current_user)):
         hist = history_business.history.get_by_id(user_id)
         return {"user_id": user_id, "history": hist}
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# -----------------------------
+# Admin endpoints (role_id == 1)
+# -----------------------------
+
+def _ensure_admin(current_user: dict) -> None:
+    role = None
+    if isinstance(current_user, dict):
+        role = current_user.get("role_id")
+        if role is None and current_user.get("user_id") is not None:
+            try:
+                db_user = user_dao.get_by_id(int(current_user["user_id"]))
+                role = db_user.get("role_id") if db_user else None
+            except Exception:
+                role = None
+    if role != 1:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+
+
+@app.get(
+    "/admin/users",
+    tags=["Admin"],
+    summary="List all users (admin)",
+    description="Return the list of all users. Admin only.",
+    response_description="List of users",
+)
+async def admin_list_users(current_user: dict = Depends(get_current_user)):
+    _ensure_admin(current_user)
+    try:
+        users = admin_dao.get_all()
+        return {"users": users}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete(
+    "/admin/user/delete",
+    tags=["Admin"],
+    summary="Delete a user (admin)",
+    description="Delete a user by ID. Admin only.",
+    response_description="Deleted user information",
+)
+async def admin_delete_user(
+    payload: AdminUserDelete, current_user: dict = Depends(get_current_user)
+):
+    _ensure_admin(current_user)
+    try:
+        deleted = user_dao.delete(payload.user_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"deleted_user": deleted}
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(
+    "/admin/user/update-username",
+    tags=["Admin"],
+    summary="Update user's username (admin)",
+    description="Update the username of a user by ID. Admin only.",
+    response_description="Updated user information",
+)
+async def admin_update_username(
+    payload: AdminUserUpdateUsername, current_user: dict = Depends(get_current_user)
+):
+    _ensure_admin(current_user)
+    try:
+        updated = user_dao.update(payload.user_id, username=payload.username)
+        if not updated:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"updated_user": updated}
+    except (TypeError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -23,13 +23,13 @@ class AdminDao(UserDao):
         try:
             with self:
                 self.cursor.execute(
-                    "SELECT id,              "
-                    "       username,        "
-                    "       email,           "
-                    "       password_hash,   "
-                    "       role             "
-                    "FROM users              "
-                    "ORDER BY id             "
+                    "SELECT user_id,              "
+                    "       username,             "
+                    "       email,                "
+                    "       password_hash,        "
+                    "       role_id               "
+                    "FROM users                   "
+                    "ORDER BY user_id             "
                 )
                 users_db = self.cursor.fetchall()
                 return users_db

@@ -19,6 +19,7 @@ Tanguy Ajas
 - [x] player's history now displayed on the frontend
 - [x] DeckDao and DeckBusiness and decks related endpoints 
 - [x] decks on frontend
+- [x] creating an admin system and fixing the current user system
 
 ### Nom Prénom élève 2
 Alexandre Gasowski

@@ -109,9 +109,6 @@ classDiagram
         + add(user_id, prompt)
     }
 
-    class UserBusiness{
-        - __init__()
-    }
 
 %% === Service Layer ===
     class EmbeddingService{
@@ -142,7 +139,6 @@ CardBusiness <..> CardDao
 AbstractDao <|-- CardDao
 dbConnection <.. AbstractDao
 AbstractDao <|.. UserDao
-UserBusiness <..> UserDao
 UserDao <.. UserService
 AbstractDao <|-- DeckDao
 AbstractDao <|-- FavoriteDao
@@ -158,17 +154,11 @@ FavoriteBusiness --> CardDao
 HistoryBusiness --> HistoryDao
 HistoryBusiness --> UserDao
 
-PlayerDao --> CardDao
-CardDao <..> EmbeddingService
-
-UserBusiness --> UserDao
 UserService --> UserDao
 DeckDao --> UserDao
 DeckDao --> CardDao
 FavoriteDao --> UserDao
 FavoriteDao --> CardDao
 HistoryDao --> UserDao
-
-EmbeddingService <.. CardDao
 
 ```

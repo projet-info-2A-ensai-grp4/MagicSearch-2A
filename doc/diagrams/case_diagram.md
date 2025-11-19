@@ -11,54 +11,66 @@ OR :
 ' paste here to visualize : https://www.plantuml.com/plantuml/uml/SyfFKj2rKt3CoKnELR1Io4ZDoSa70000
 ' doc : https://plantuml.com/fr/use-case-diagram
 
+left to right direction
 
-top to bottom direction
+actor Player
+actor Admin
+actor Visitor
 
-actor "User"    as user
-actor "Admin"   as admin
-
-
-rectangle {
-  usecase "Sign up"    as signup
-  usecase "Search"     as search
-  usecase "Create a deck" as create_deck
-  usecase "View decks" as view_decks
-  usecase "Star a card" as star_card
-  usecase "View history" as view_history
+package "Account" {
+    usecase "Log In" as login
+    usecase "Register" as register
 }
 
-rectangle {
-  usecase "Log In"     as login
-  usecase "Log Out"    as logout
+package "Admin tasks" {
+    usecase "Delete user" as delete_user
+    usecase "Edit user" as edit_user
+    usecase "List users" as list_users
 }
 
-rectangle {
- usecase "Add card" as add_card
- usecase "Delete card" as delete_card
- usecase "Edit card" as edit_card
- usecase "Ban user" as ban_user
- usecase "Edit user" as edit_user
+package "Decks" {
+    usecase "Create a deck" as create_deck
+    usecase "View decks" as view_decks
+    usecase "Add a card to a deck" as add_card_to_deck
+    usecase "Remove a card from a deck" as remove_card_from_deck
+    usecase "Delete a deck" as delete_deck
 }
 
-user --> signup
-user --> login
-user --> logout
-user --> search
-user --> create_deck
-user --> view_decks
-user --> star_card
-user --> view_history
+package "Favorites / Histories" {
+    usecase "Star a card" as star_card
+    usecase "Unstar a card" as unstar_card
+    usecase "View favorites" as view_favorites
+    usecase "View history" as view_history
+}
 
-admin --> delete_card
-admin --> add_card
-admin --> edit_card
-admin --> ban_user
-admin --> edit_user
+package "Search" {
+    usecase "Search cards" as search
+    usecase "Filter" as filter
+}
 
-admin --> login
-admin --> logout
-user --> login
-user --> logout
+Player --> filter
+Player --> search
+Player --> add_card_to_deck
+Player --> remove_card_from_deck
+Player --> star_card
+Player --> unstar_card
+Player --> view_decks
+Player --> delete_deck
+Player --> view_favorites
+Player --> view_history
+Player --> create_deck
+
+
+Visitor --> filter
+Visitor --> search
+Visitor --> register
+Visitor --> login
+
+
+Admin --> list_users
+Admin --> delete_user
+Admin --> edit_user
 
 @enduml
+
 ```

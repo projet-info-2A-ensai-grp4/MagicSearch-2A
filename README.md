@@ -40,11 +40,18 @@ By default, the opened ports of the server will be 8000 for the API and 8001 for
 
 ### Linux
 
-
 You will find in `src/utils/automatic_setup` a convenient shell script. In order to have a flawless installation, remember to install [**Gum**](https://github.com/charmbracelet/gum), Python 3.10+ and Postgresql **(with PGVector)**.Then :
-1. `cd src/utils/automatic_setup` in the root directory of our project
-2. Make the script executable `chmod +x setup.sh`
-3. Launch it!
+1. Install **Gum** if not installed, Python 3.10+ and Postgres database started. _For example, we use SSPCloud to deploy a Postgres Instance_
+```
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
+sudo apt update && sudo apt install gum
+```
+2. Clone the repository and cd inside it
+3. `cd src/utils/automatic_setup` in the root directory of our project
+4. Make the script executable `chmod +x setup.sh`
+5. Launch it!
 ![Made with VHS](https://vhs.charm.sh/vhs-3LV1WGyhjokjAsHeFBmYXX.gif)
 
 ### Windows

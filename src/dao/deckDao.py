@@ -44,7 +44,7 @@ class DeckDao(AbstractDao):
                 self.cursor.execute(
                     "INSERT INTO user_deck_link (user_id, deck_id) "
                     "VALUES (%s, %s)                               ",
-                    (user_id, row['deck_id']),
+                    (user_id, row["deck_id"]),
                 )
 
                 self.conn.commit()
@@ -53,8 +53,6 @@ class DeckDao(AbstractDao):
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
-
-    # READ
 
     def exist(self, id):
         """
@@ -90,6 +88,8 @@ class DeckDao(AbstractDao):
             raise ConnectionError(f"Database connection failed: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Unexpected database error: {e}") from e
+
+    # READ
 
     def get_by_id(self, id):
         """
@@ -127,7 +127,7 @@ class DeckDao(AbstractDao):
                 # Filter out None values for empty decks
                 filtered_results = []
                 for result in results:
-                    if result['id'] is not None:  # Card exists
+                    if result["id"] is not None:  # Card exists
                         filtered_results.append(result)
 
                 return filtered_results
@@ -251,15 +251,13 @@ class DeckDao(AbstractDao):
             with self:
                 # Supprimer les cartes du deck
                 self.cursor.execute(
-                    "DELETE FROM deck_cards "
-                    "WHERE deck_id = %s     ",
+                    "DELETE FROM deck_cards " "WHERE deck_id = %s     ",
                     (id,),
                 )
 
                 # Supprimer le lien user-deck
                 self.cursor.execute(
-                    "DELETE FROM user_deck_link "
-                    "WHERE deck_id = %s         ",
+                    "DELETE FROM user_deck_link " "WHERE deck_id = %s         ",
                     (id,),
                 )
 

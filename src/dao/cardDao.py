@@ -1,11 +1,3 @@
-# export PYTHONPATH=~/work/MagicSearch-2A/src
-# export DB_HOST=postgresql-885217.user-victorjean
-# export DB_PORT=5432
-# export DB_NAME=defaultdb
-# export DB_USER=user-victorjean
-# export DB_PASSWORD=pr9yh1516s57jjnmw7ll
-
-import psycopg2
 from psycopg2 import sql
 from dao.abstractDao import AbstractDao
 
@@ -390,7 +382,6 @@ class CardDao(AbstractDao):
             contains non-numeric values. psycopg2.Error: If a database error
             occurs during the query execution.
         """
-        # Input validation
         if not isinstance(vector_me, list):
             raise TypeError("vector_me must be a list")
         if not vector_me:
@@ -402,17 +393,12 @@ class CardDao(AbstractDao):
 
         try:
             with self:
-                # Execute the update query
                 query = sql.SQL("UPDATE cards SET embedding = %s WHERE id = %s")
                 self.cursor.execute(query, (vector_me, card_id))
                 self.conn.commit()
-
-                # Check if the update was successful
                 if self.cursor.rowcount == 0:
                     raise ValueError(f"No card found with ID {card_id}")
-
                 return self.cursor.rowcount
-
         except Exception as e:
             print(f"Error updating embedding: {e}")
             raise
@@ -467,8 +453,6 @@ class CardDao(AbstractDao):
         list[dict]
             List of dictionaries representing the cards retrieved from the `cards` table.
         """
-
-        # Validation des colonnes
         if not set(k.split("__")[0] for k in kwargs.keys()).issubset(
             self.columns_valid
         ):
@@ -476,8 +460,6 @@ class CardDao(AbstractDao):
             raise ValueError(f"Invalid keys: {invalid}")
         if order_by not in self.columns_valid:
             raise ValueError(f"Invalid order_by: {order_by}")
-
-        # Colonnes PostgreSQL de type ARRAY
         array_columns = {"colors", "color_identity"}
 
         try:
@@ -490,16 +472,12 @@ class CardDao(AbstractDao):
                     parts = raw_col.split("__")
                     col = parts[0]
                     op_suffix = parts[1] if len(parts) > 1 else None
-
-                    # Détermination de l’opérateur SQL
                     if op_suffix == "lte":
                         operator = "<="
                     elif op_suffix == "gte":
                         operator = ">="
                     else:
                         operator = "="
-
-                    # Construction des conditions WHERE
                     if vals is None:
                         where_clauses.append("FALSE")
                     elif isinstance(vals, (list, tuple)):
@@ -517,8 +495,6 @@ class CardDao(AbstractDao):
                         else:
                             where_clauses.append(f"{col} {operator} %s")
                             params.append(vals)
-
-                # Assemblage de la requête
                 if where_clauses:
                     base_query += " WHERE " + " AND ".join(where_clauses)
 
@@ -527,35 +503,13 @@ class CardDao(AbstractDao):
 
                 base_query += " LIMIT %s OFFSET %s"
                 params.extend([limit, offset])
-
-                # Debug (optionnel)
-                # print("QUERY:", base_query)
-                # print("PARAMS:", params)
-
                 self.cursor.execute(base_query, params)
                 return self.cursor.fetchall()
-
         except Exception as e:
             print(f"Error executing query: {e}")
             import sys
 
             sys.exit(1)
-
-    def faceted_search():
-        """Allow multi-filter search across facets like type, set, color"""
-        pass
-
-    def filter_by_attributes():
-        """Filter cards using structured fields (mana, color, type, etc.)"""
-        pass
-
-    def full_text_search():
-        """Search cards by keywords in name, text, or type using text index"""
-        pass
-
-    def precomputed_tag_search():
-        """Search using pre-labeled categories like removal, ramp, draw"""
-        pass
 
     def search_by_name(self, name: str, limit: int = 20, offset: int = 0):
         """
@@ -591,7 +545,7 @@ class CardDao(AbstractDao):
             with self:
                 # Use ILIKE for case-insensitive partial matching
                 sql_query = """
-                    SELECT id, name, ascii_name, type, mana_cost, mana_value, 
+                    SELECT id, name, ascii_name, type, mana_cost, mana_value,
                            text, colors, color_identity, image_url
                     FROM cards
                     WHERE name ILIKE %s OR ascii_name ILIKE %s
